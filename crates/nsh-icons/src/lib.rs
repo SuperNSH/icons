@@ -98,6 +98,12 @@ pub fn icon(icon: Icon) -> Svg {
     svg(ImageSrc::svg_markup(&icon.markup()))
 }
 
+/// The crate's UI set for TSX. It registers nothing, because TSX apps get
+/// their icons from the CLI, but an app may list the crate in `nsh.json`
+/// `"rust"`, and NSH requires such a crate to have one.
+#[native_module("nsh-icons/native")]
+fn native(_registry: &mut Registry) {}
+
 /// A glyph of an icon font the CLI made (`nsh-icons font`): register the
 /// font with `Root::font` (Rust) or by importing the `.ttf` (TSX).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
