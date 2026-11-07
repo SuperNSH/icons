@@ -321,8 +321,8 @@ fn identifier(name: &str, upper: bool) -> String {
     ident
 }
 
-/// The module text for one set: `SET`, a constant per icon and `ALL`,
-/// sorted by name for `nsh_icons::find`.
+/// The module text for one set: a constant per icon, and `set::INFO` and
+/// `set::ALL` (sorted by name for `nsh_icons::find`).
 pub fn module(set: &SetInfo, icons: &[Resolved], total: usize) -> Result<String, Error> {
     let mut seen: BTreeMap<String, &str> = BTreeMap::new();
     for icon in icons {
@@ -343,12 +343,7 @@ pub fn module(set: &SetInfo, icons: &[Resolved], total: usize) -> Result<String,
         set.name, set.license, set.author
     );
     let _ = writeln!(out, "pub mod {module} {{");
-    let _ = writeln!(out, "    use crate::{{Icon, IconSet}};");
-    let _ = writeln!(
-        out,
-        "    pub const SET: IconSet = IconSet {{ prefix: {:?}, name: {:?}, license: {:?}, author: {:?}, multicolor: {}, total: {} }};",
-        set.prefix, set.name, set.license, set.author, set.multicolor, total
-    );
+    let _ = writeln!(out, "    use crate::Icon;");
     for icon in icons {
         let [l, t, w, h] = icon.view_box;
         let _ = writeln!(
@@ -365,9 +360,26 @@ pub fn module(set: &SetInfo, icons: &[Resolved], total: usize) -> Result<String,
             set.multicolor
         );
     }
-    let names: Vec<String> = icons.iter().map(|i| const_name(&i.name)).collect();
-    let _ = writeln!(out, "    /// Every icon of the set, sorted by name.");
-    let _ = writeln!(out, "    pub const ALL: &[Icon] = &[{}];", names.join(", "));
+    // A module, not constants beside the icons: an icon named `set` or `all`
+    // is a constant, which lives in another namespace than a module.
+    let names: Vec<String> = icons
+        .iter()
+        .map(|i| format!("super::{}", const_name(&i.name)))
+        .collect();
+    let _ = writeln!(out, "    /// The set's info and its icons, sorted by name.");
+    let _ = writeln!(out, "    pub mod set {{");
+    let _ = writeln!(out, "        use crate::{{Icon, IconSet}};");
+    let _ = writeln!(
+        out,
+        "        pub const INFO: IconSet = IconSet {{ prefix: {:?}, name: {:?}, license: {:?}, author: {:?}, multicolor: {}, total: {} }};",
+        set.prefix, set.name, set.license, set.author, set.multicolor, total
+    );
+    let _ = writeln!(
+        out,
+        "        pub const ALL: &[Icon] = &[{}];",
+        names.join(", ")
+    );
+    let _ = writeln!(out, "    }}");
     let _ = writeln!(out, "}}");
     Ok(out)
 }
@@ -499,8 +511,20 @@ mod tests {
         let text = module(&info, &icons, 2).unwrap();
         assert!(text.contains(r#"license: "MIT""#));
         assert!(text.contains(r##"body: "<path fill=\"#fff\"/>""##));
-        assert!(text.contains("pub const ALL: &[Icon] = &[A, B];"));
+        assert!(text.contains("pub const ALL: &[Icon] = &[super::A, super::B];"));
         assert_eq!(restrictive_license(&text), None);
+    }
+
+    #[test]
+    fn icons_named_like_the_set_s_own_items_do_not_clash() {
+        let (info, icons) = parse(
+            r#"{"prefix":"t","icons":{"set":{"body":""},"all":{"body":""},"info":{"body":""}}}"#,
+        )
+        .unwrap();
+        let text = module(&info, &icons, 3).unwrap();
+        assert!(text.contains("    pub const SET: Icon"));
+        assert!(text.contains("pub const INFO: IconSet"));
+        assert!(text.contains("pub const ALL: &[Icon] = &[super::ALL, super::INFO, super::SET];"));
     }
 
     #[test]

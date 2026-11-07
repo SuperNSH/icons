@@ -73,7 +73,7 @@ pub struct IconSet {
     pub total: usize,
 }
 
-/// The icon named `name` in one set's `ALL`, which is sorted by name.
+/// The icon named `name` in one set's `set::ALL`, which is sorted by name.
 pub fn find(icons: &[Icon], name: &str) -> Option<Icon> {
     icons
         .binary_search_by(|icon| icon.name.cmp(name))
@@ -92,8 +92,8 @@ pub fn lookup(id: &str) -> Option<Icon> {
 }
 
 /// The icon as an element, at its view box's size until styled. Chain
-/// `.size(..)` and `.text_color(..)`; give it an accessibility label when
-/// it stands alone, as a button's only content does.
+/// `.size(..)` and `.text_color(..)`; give it `.accessible(true).label(..)`
+/// when it stands alone, as a button's only content does.
 pub fn icon(icon: Icon) -> Svg {
     svg(ImageSrc::svg_markup(&icon.markup()))
 }

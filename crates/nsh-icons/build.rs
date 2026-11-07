@@ -43,7 +43,7 @@ fn main() {
     );
     let list: Vec<String> = enabled
         .iter()
-        .map(|m| format!("({m}::SET, {m}::ALL)"))
+        .map(|m| format!("({m}::set::INFO, {m}::set::ALL)"))
         .collect();
     let _ = writeln!(
         out,

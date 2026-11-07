@@ -25,7 +25,7 @@ view()
     .child(icon(logos::RUST).size(px(20.0)))
 ```
 
-`icon` returns NSH's `Svg` element, so it takes any style. Give it `.accessibility_label("Like")` when it stands alone, as a button's only content does. Each set's module has `SET` (name, license, count) and `ALL`, which is sorted. `nsh_icons::lookup("lucide:heart")` finds an icon by its Iconify id among the sets you turned on.
+`icon` returns NSH's `Svg` element, so it takes any style. Give it `.accessible(true).label("Like")` when it stands alone, as a button's only content does. Each set's module has `set::INFO` (name, license, count) and `set::ALL`, which is sorted. `nsh_icons::lookup("lucide:heart")` finds an icon by its Iconify id among the sets you turned on.
 
 The bundled sets are `akar-icons`, `ant-design`, `bi`, `bx`, `carbon`, `circle-flags`, `codicon`, `devicon`, `fa7-brands`, `fa7-regular`, `fa7-solid`, `fe`, `flag`, `fluent`, `heroicons`, `hugeicons`, `iconoir`, `ion`, `line-md`, `logos`, `lucide`, `majesticons`, `material-symbols`, `mdi`, `mingcute`, `mynaui`, `octicon`, `ph`, `radix-icons`, `ri`, `simple-icons`, `solar`, `streamline`, `svg-spinners` and `tabler`. For any other set, use the CLI with `--lang rust`, below.
 

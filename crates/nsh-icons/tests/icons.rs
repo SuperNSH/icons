@@ -17,7 +17,7 @@ fn a_constant_is_the_set_s_own_icon() {
     assert!(lucide::HEART.body.contains("currentColor"));
     assert!(!lucide::HEART.multicolor);
     assert!(logos::RUST.multicolor);
-    assert_eq!(lucide::SET.license, "ISC");
+    assert_eq!(lucide::set::INFO.license, "ISC");
 }
 
 #[test]
@@ -64,7 +64,8 @@ fn IconScreen() -> impl IntoElement {
         .child(
             icon(lucide::HEART)
                 .size(px(20.0))
-                .accessibility_label("Like"),
+                .accessible(true)
+                .label("Like"),
         )
         .child(nsh_icons::glyph(glyph))
         .child(text("ready"))
