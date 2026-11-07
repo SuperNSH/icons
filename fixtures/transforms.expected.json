@@ -1,0 +1,13 @@
+[
+  { "name": "1k", "body": "<path fill=\"#fff\" d=\"M0 0\"/>", "viewBox": [2, 3, 24, 24] },
+  { "name": "arrow", "body": "<path d=\"M4 12h16\"/>", "viewBox": [0, 0, 24, 24] },
+  { "name": "arrow-back", "body": "<g transform=\"translate(24 0) scale(-1 1)\"><path d=\"M4 12h16\"/></g>", "viewBox": [0, 0, 24, 24] },
+  { "name": "arrow-big", "body": "<path d=\"M4 12h16\"/>", "viewBox": [0, 0, 32, 32] },
+  { "name": "arrow-down", "body": "<g transform=\"translate(0 24) scale(1 -1)\"><path d=\"M4 12h16\"/></g>", "viewBox": [0, 0, 24, 24] },
+  { "name": "flipped", "body": "<g transform=\"translate(24 0) scale(-1 1)\"><p/></g>", "viewBox": [0, 0, 24, 24] },
+  { "name": "flipped-both", "body": "<g transform=\"rotate(180 12 12)\"><p/></g>", "viewBox": [0, 0, 24, 24] },
+  { "name": "wide", "body": "<rect width=\"20\" height=\"10\"/>", "viewBox": [0, 0, 20, 10] },
+  { "name": "wide-half", "body": "<g transform=\"rotate(180 10 5)\"><rect width=\"20\" height=\"10\"/></g>", "viewBox": [0, 0, 20, 10] },
+  { "name": "wide-three", "body": "<g transform=\"rotate(-90 10 10)\"><rect width=\"20\" height=\"10\"/></g>", "viewBox": [0, 0, 10, 20] },
+  { "name": "wide-turned", "body": "<g transform=\"rotate(90 5 5)\"><rect width=\"20\" height=\"10\"/></g>", "viewBox": [0, 0, 10, 20] }
+]

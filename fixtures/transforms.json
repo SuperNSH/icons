@@ -1,0 +1,22 @@
+{
+  "prefix": "fixture",
+  "info": { "name": "Fixture", "author": { "name": "nsh-icons" }, "license": { "title": "MIT", "spdx": "MIT" } },
+  "width": 24,
+  "height": 24,
+  "icons": {
+    "arrow": { "body": "<path d=\"M4 12h16\"/>" },
+    "wide": { "body": "<rect width=\"20\" height=\"10\"/>", "width": 20, "height": 10 },
+    "flipped": { "body": "<p/>", "hFlip": true },
+    "old": { "body": "<p/>", "hidden": true },
+    "1k": { "body": "<path fill=\"#fff\" d=\"M0 0\"/>", "left": 2, "top": 3 }
+  },
+  "aliases": {
+    "arrow-back": { "parent": "arrow", "hFlip": true },
+    "arrow-down": { "parent": "arrow", "vFlip": true },
+    "wide-turned": { "parent": "wide", "rotate": 1 },
+    "wide-half": { "parent": "wide-turned", "rotate": 1 },
+    "wide-three": { "parent": "wide-half", "rotate": 1 },
+    "flipped-both": { "parent": "flipped", "vFlip": true },
+    "arrow-big": { "parent": "arrow", "width": 32, "height": 32 }
+  }
+}

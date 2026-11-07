@@ -1,0 +1,16 @@
+[package]
+name = "nsh-icons-codegen"
+description = "Iconify JSON to Rust for nsh-icons: alias resolution, identifiers and the generated modules"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+name = "nsh_icons_codegen"
+path = "src/lib.rs"
+
+[dependencies]
+flate2 = "1.1.11"
+serde_json = "1.0.154"

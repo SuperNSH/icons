@@ -1,0 +1,65 @@
+[package]
+name = "nsh-icons"
+description = "Every Iconify icon set for Native Shell apps: typed SVG icons behind one Cargo feature per set, and icon-font glyphs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+# The gzipped sets are the source of every generated module.
+include = ["src/**", "data/**", "build.rs", "Cargo.toml"]
+
+[lib]
+name = "nsh_icons"
+path = "src/lib.rs"
+
+[dependencies]
+nsh-core = "0.4.0"
+
+[build-dependencies]
+nsh-icons-codegen = { path = "../nsh-icons-codegen", version = "0.1.0" }
+
+[dev-dependencies]
+nsh-engine = { version = "0.4.0", default-features = false }
+nsh-testing = { version = "0.4.0", default-features = false }
+
+[features]
+default = []
+# One feature per Iconify set; turn on only the sets the app uses.
+# BEGIN GENERATED SETS (tools/fetch-data.ts)
+akar-icons = []
+ant-design = []
+bi = []
+bx = []
+carbon = []
+circle-flags = []
+codicon = []
+devicon = []
+fa7-brands = []
+fa7-regular = []
+fa7-solid = []
+fe = []
+flag = []
+fluent = []
+heroicons = []
+hugeicons = []
+iconoir = []
+ion = []
+line-md = []
+logos = []
+lucide = []
+majesticons = []
+material-symbols = []
+mdi = []
+mingcute = []
+mynaui = []
+octicon = []
+ph = []
+radix-icons = []
+ri = []
+simple-icons = []
+solar = []
+streamline = []
+svg-spinners = []
+tabler = []
+# END GENERATED SETS
