@@ -15,8 +15,9 @@ fn a_constant_is_the_set_s_own_icon() {
     assert_eq!(lucide::HEART.name, "heart");
     assert_eq!(lucide::HEART.view_box, [0.0, 0.0, 24.0, 24.0]);
     assert!(lucide::HEART.body.contains("currentColor"));
-    assert!(!lucide::HEART.multicolor);
-    assert!(logos::RUST.multicolor);
+    // Known at compile time, so checked there.
+    const { assert!(!lucide::HEART.multicolor) };
+    const { assert!(logos::RUST.multicolor) };
     assert_eq!(lucide::set::INFO.license, "ISC");
 }
 
