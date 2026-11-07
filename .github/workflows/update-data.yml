@@ -1,0 +1,51 @@
+name: Update icon data
+
+# Weekly: moves the pin to the newest @iconify/json and opens a pull request
+# with the regenerated data, so CI compiles every set before anything lands.
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      - name: Fetch the newest release
+        id: fetch
+        run: |
+          version="$(curl -fsSL https://registry.npmjs.org/@iconify/json/latest | jq -r .version)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          bun tools/fetch-data.ts "$version"
+      - name: Open a pull request when anything changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.fetch.outputs.version }}
+        run: |
+          if git diff --quiet; then
+            echo "Already at @iconify/json $VERSION."
+            exit 0
+          fi
+          branch="data/iconify-json-$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -A
+          git commit -m "chore(data): update @iconify/json to $VERSION"
+          git push --force origin "$branch"
+          gh pr view "$branch" >/dev/null 2>&1 || gh pr create --base master --head "$branch" \
+            --title "chore(data): update @iconify/json to $VERSION" \
+            --body "The weekly data update. CI compiles every bundled set from the new data before this can merge; docs/sets.md shows what changed."
+          # A push with this job's token starts no workflow; a dispatch does.
+          gh workflow run ci.yml --ref "$branch"

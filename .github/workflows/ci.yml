@@ -1,0 +1,310 @@
+name: CI
+
+# Every compile and test runs here, on GitHub's runners, never on a developer's machine.
+# kache caches compiler outputs in GitHub's Actions cache; only master saves to it.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  LINUX_PACKAGES: dbus dbus-user-session libgtk-4-dev libwebkitgtk-6.0-dev clang llvm
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  rust:
+    name: rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
+        with:
+          version: v2.0.0
+          cache-dir: ${{ runner.temp }}/kache
+          manifest-key: rust-${{ matrix.os }}
+          cache-key-prefix: kache-rust-${{ matrix.os }}
+          save-cache: ${{ github.ref == 'refs/heads/master' }}
+          pr-comment: false
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+      - run: cargo clippy -p nsh-icons-codegen --all-targets -- -D warnings
+      - run: cargo clippy -p nsh-icons --all-targets --features lucide,logos -- -D warnings
+      # The codegen tests read every bundled set; the crate's tests run with two sets on.
+      - run: cargo test -p nsh-icons-codegen --no-fail-fast
+      - run: cargo test -p nsh-icons --features lucide,logos --no-fail-fast
+
+  sets:
+    name: every set compiles (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
+        with:
+          version: v2.0.0
+          cache-dir: ${{ runner.temp }}/kache
+          manifest-key: sets-${{ matrix.shard }}
+          cache-key-prefix: kache-sets-${{ matrix.shard }}
+          save-cache: ${{ github.ref == 'refs/heads/master' }}
+          pr-comment: false
+      - name: Install Linux packages
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+      - run: tools/ci/check-sets.sh ${{ matrix.shard }} 4
+
+  cross-check:
+    name: check (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-ios }
+          - { os: macos-latest, target: aarch64-apple-ios-sim }
+          - { os: ubuntu-latest, target: aarch64-linux-android }
+          - { os: ubuntu-latest, target: wasm32-unknown-unknown }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: clippy
+          targets: ${{ matrix.target }}
+      - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
+        with:
+          version: v2.0.0
+          cache-dir: ${{ runner.temp }}/kache
+          manifest-key: check-${{ matrix.target }}
+          cache-key-prefix: kache-check-${{ matrix.target }}
+          save-cache: ${{ github.ref == 'refs/heads/master' }}
+          pr-comment: false
+      - name: Point cc at the NDK
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+          bin="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "CC_aarch64_linux_android=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$bin/llvm-ar" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+      - run: cargo clippy -p nsh-icons --target ${{ matrix.target }} --features lucide,logos -- -D warnings
+
+  typescript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      - name: Install NSH
+        env:
+          NSH_VERSION: v0.4.0
+        run: |
+          curl -fsSL https://nsh.dev/install.sh | sh
+          echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: The CLI, type checked and tested
+        working-directory: packages/nsh-icons
+        run: |
+          bun install --frozen-lockfile
+          bunx tsc -p cli
+          bun test cli
+      - name: The TSX package, check and build without warnings, then test
+        working-directory: packages/nsh-icons
+        run: |
+          nsh check
+          nsh build 2>&1 | tee build.log
+          ! grep -i warn build.log
+          nsh test
+      - name: The gallery's generated files match what the CLI writes now
+        working-directory: examples/gallery
+        run: |
+          node ../../packages/nsh-icons/cli/nsh-icons.ts add --out src/icons.ts
+          node ../../packages/nsh-icons/cli/nsh-icons.ts font --out assets/icons.ttf --map src/icon-font.ts
+          git diff --exit-code -- .
+
+  data:
+    name: bundled data matches its pinned version
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      - run: bun tools/fetch-data.ts
+      - run: git diff --exit-code
+
+  demo:
+    name: demo (${{ matrix.name }})
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [format, rust, typescript]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Desktop builds come out for the runner's own processor, so each architecture gets its own runner.
+          # NSH 0.4.0 ships prebuilt CLIs only for macOS arm64, Linux x86_64 and Windows x86_64;
+          # the other three build NSH's CLI from its v0.4.0 source (nsh: source).
+          - { os: macos-latest, target: macos, name: macos-arm64, nsh: release }
+          - { os: macos-15-intel, target: macos, name: macos-x86_64, nsh: source }
+          - { os: ubuntu-latest, target: linux, name: linux-x86_64, nsh: release }
+          - { os: ubuntu-24.04-arm, target: linux, name: linux-arm64, nsh: source }
+          - { os: windows-latest, target: windows, name: windows-x86_64, nsh: release }
+          - { os: windows-11-arm, target: windows, name: windows-arm64, nsh: source }
+          - { os: macos-latest, target: ios-simulator, name: ios-simulator, nsh: release }
+          - { os: ubuntu-latest, target: android, name: android, nsh: release }
+          - { os: ubuntu-latest, target: web, name: web, nsh: release }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target == 'android' && 'aarch64-linux-android' || matrix.target == 'web' && 'wasm32-unknown-unknown' || matrix.target == 'ios-simulator' && 'aarch64-apple-ios-sim' || '' }}
+      - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
+        with:
+          version: v2.0.0
+          cache-dir: ${{ runner.temp }}/kache
+          manifest-key: demo-${{ matrix.name }}
+          cache-key-prefix: kache-demo-${{ matrix.name }}
+          save-cache: ${{ github.ref == 'refs/heads/master' }}
+          pr-comment: false
+      - name: Install the wasm-bindgen CLI that NSH's web runtime needs
+        if: matrix.target == 'web'
+        uses: taiki-e/install-action@3a3daafd3b7f23b8f65d9f5ba2db203fb59b79e2 # v2.90.2
+        with:
+          tool: wasm-bindgen@0.2.129
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+      - name: Install NSH
+        if: matrix.nsh != 'source' && runner.os != 'Windows'
+        env:
+          NSH_VERSION: v0.4.0
+        run: |
+          curl -fsSL https://nsh.dev/install.sh | sh
+          echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install NSH
+        if: matrix.nsh != 'source' && runner.os == 'Windows'
+        shell: pwsh
+        env:
+          NSH_VERSION: v0.4.0
+        run: |
+          irm https://nsh.dev/install.ps1 | iex
+          "$env:LOCALAPPDATA\nsh\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Build NSH's CLI from its v0.4.0 source
+        if: matrix.nsh == 'source'
+        shell: bash
+        # The gallery lists the crate, so `nsh package` builds the app's own runner with Cargo and needs no prebuilt runtime.
+        run: cargo install --locked --git https://github.com/longbridge/nsh --tag v0.4.0 nsh-cli
+      - name: Work around NSH 0.4.0's crates.io packaging of nsh-platform-ios
+        if: matrix.target == 'ios-simulator'
+        # The published crate includes a file it does not ship, so build NSH's crates from its v0.4.0 source.
+        run: |
+          git clone --quiet --depth 1 --branch v0.4.0 https://github.com/longbridge/nsh "$RUNNER_TEMP/nsh-src"
+          mkdir -p examples/gallery/.cargo
+          {
+            echo "[patch.crates-io]"
+            for crate in "$RUNNER_TEMP"/nsh-src/crates/nsh-*; do
+              echo "$(basename "$crate") = { path = \"$crate\" }"
+            done
+          } > examples/gallery/.cargo/config.toml
+      - name: Put the package where the gallery imports it
+        # A copy, not a link: Windows symlinks need a privilege the runner lacks.
+        shell: bash
+        run: |
+          mkdir -p examples/gallery/node_modules/nsh-icons
+          cp -r packages/nsh-icons/src packages/nsh-icons/package.json examples/gallery/node_modules/nsh-icons/
+      - name: Package
+        shell: bash
+        working-directory: examples/gallery
+        run: |
+          abi=""
+          [ "${{ matrix.target }}" = android ] && abi="--abi arm64-v8a"
+          nsh package App.tsx --target ${{ matrix.target }} $abi --app-version 0.1.0 --build ${{ github.run_number }} --out "$RUNNER_TEMP/out"
+      - name: Name the build
+        shell: bash
+        run: |
+          mkdir -p dist
+          cd "$RUNNER_TEMP/out"
+          name="icons-gallery-${{ matrix.name }}"
+          case "${{ matrix.target }}" in
+            android) cp ./*.apk "$GITHUB_WORKSPACE/dist/$name.apk" ;;
+            linux) cp ./*.tar.gz "$GITHUB_WORKSPACE/dist/$name.tar.gz" ;;
+            macos|ios-simulator) ditto -c -k --keepParent ./*.app "$GITHUB_WORKSPACE/dist/$name.zip" ;;
+            windows) 7z a "$GITHUB_WORKSPACE/dist/$name.zip" ./* > /dev/null ;;
+            web) tar -czf "$GITHUB_WORKSPACE/dist/$name.tar.gz" * ;;
+          esac
+          ls -la "$GITHUB_WORKSPACE/dist"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: demo-${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: publish the latest build
+    needs: [format, rust, sets, cross-check, typescript, data, demo]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-latest
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Replace the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          test "$(ls dist | wc -l)" -eq 9 || { echo "expected nine gallery builds in dist:"; ls -la dist; exit 1; }
+          gh release delete latest --repo "$REPO" --cleanup-tag --yes || true
+          gh release create latest dist/* --repo "$REPO" --target "$GITHUB_SHA" --latest \
+            --title "Latest build" \
+            --notes "Gallery builds from master at $GITHUB_SHA, replaced on every push to master. Unsigned: macOS and Windows will warn before opening them, and the iOS build runs only in the simulator."
