@@ -2,9 +2,9 @@
 // a gzipped Iconify JSON per bundled set, the manifest of every set, the
 // crate's feature list, docs/sets.md and NOTICE.md.
 // Usage: bun tools/fetch-data.ts [version]
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { untgz } from "../packages/nsh-icons/cli/tar.ts";
 import { BUNDLED } from "./sets.ts";
 
@@ -54,8 +54,10 @@ async function main() {
     new TextDecoder().decode(tar.get("package/collections.json")!),
   );
 
-  await rm(join(dataDir, "sets"), { recursive: true, force: true });
   await mkdir(join(dataDir, "sets"), { recursive: true });
+  for (const file of await readdir(join(dataDir, "sets"))) {
+    if (!BUNDLED.includes(file.replace(/\.json\.gz$/, ""))) await rm(join(dataDir, "sets", file));
+  }
 
   const manifest: ManifestEntry[] = [];
   for (const prefix of Object.keys(collections).sort()) {
@@ -63,8 +65,7 @@ async function main() {
     const json = tar.get(`package/json/${prefix}.json`);
     if (!json || info.hidden) continue;
     const bundled = BUNDLED.includes(prefix);
-    // Node writes a zero mtime, so an unchanged set makes no diff.
-    if (bundled) await writeFile(join(dataDir, "sets", `${prefix}.json.gz`), gzipSync(json, { level: 9 }));
+    if (bundled) await writeSet(join(dataDir, "sets", `${prefix}.json.gz`), json);
     const license = info.license?.spdx ?? info.license?.title ?? "unknown";
     manifest.push({
       prefix,
@@ -88,6 +89,14 @@ async function main() {
   await writeFeatures(manifest);
   await writeDocs(manifest, version);
   console.log(`@iconify/json ${version}: ${manifest.length} sets, ${manifest.reduce((n, s) => n + s.total, 0)} icons`);
+}
+
+/** Writes a set's gzipped JSON unless the file already holds the same JSON:
+ * zlib builds compress differently, so the bytes alone would always differ. */
+async function writeSet(path: string, json: Uint8Array) {
+  const existing = await readFile(path).catch(() => null);
+  if (existing && Buffer.compare(gunzipSync(existing), Buffer.from(json)) === 0) return;
+  await writeFile(path, gzipSync(json, { level: 9 }));
 }
 
 /** Rewrites the generated block of the crate's [features] table. */
