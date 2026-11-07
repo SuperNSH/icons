@@ -1,0 +1,138 @@
+// Downloads the pinned @iconify/json release and writes what the repo commits:
+// a gzipped Iconify JSON per bundled set, the manifest of every set, the
+// crate's feature list, docs/sets.md and NOTICE.md.
+// Usage: bun tools/fetch-data.ts [version]
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { gzipSync } from "node:zlib";
+import { untgz } from "../packages/nsh-icons/cli/tar.ts";
+import { BUNDLED } from "./sets.ts";
+
+const root = join(import.meta.dir, "..");
+const dataDir = join(root, "crates/nsh-icons/data");
+const pinFile = join(dataDir, "VERSION");
+
+// Copyleft and non-commercial licenses: enabling one of these sets puts its
+// terms on the app, so the crate warns at build time and the docs flag them.
+export const RESTRICTIVE = /^(GPL|LGPL|AGPL|CC-BY-SA|CC-BY-NC|CC-BY-NC-SA|MPL)/;
+
+interface Collection {
+  name: string;
+  total?: number;
+  author?: { name: string; url?: string };
+  license?: { title: string; spdx?: string; url?: string };
+  palette?: boolean;
+  category?: string;
+  hidden?: boolean;
+}
+
+interface ManifestEntry {
+  prefix: string;
+  name: string;
+  total: number;
+  license: string;
+  licenseUrl: string;
+  author: string;
+  authorUrl: string;
+  multicolor: boolean;
+  category: string;
+  restrictive: boolean;
+  bundled: boolean;
+}
+
+async function main() {
+  const version =
+    process.argv[2] ?? (await readFile(pinFile, "utf8").catch(() => "")).trim();
+  if (!version) throw new Error("no version: pass one, or pin it in crates/nsh-icons/data/VERSION");
+
+  const url = `https://registry.npmjs.org/@iconify/json/-/json-${version}.tgz`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+  const tar = untgz(new Uint8Array(await response.arrayBuffer()));
+
+  const collections: Record<string, Collection> = JSON.parse(
+    new TextDecoder().decode(tar.get("package/collections.json")!),
+  );
+
+  await rm(join(dataDir, "sets"), { recursive: true, force: true });
+  await mkdir(join(dataDir, "sets"), { recursive: true });
+
+  const manifest: ManifestEntry[] = [];
+  for (const prefix of Object.keys(collections).sort()) {
+    const info = collections[prefix];
+    const json = tar.get(`package/json/${prefix}.json`);
+    if (!json || info.hidden) continue;
+    const bundled = BUNDLED.includes(prefix);
+    // Node writes a zero mtime, so an unchanged set makes no diff.
+    if (bundled) await writeFile(join(dataDir, "sets", `${prefix}.json.gz`), gzipSync(json, { level: 9 }));
+    const license = info.license?.spdx ?? info.license?.title ?? "unknown";
+    manifest.push({
+      prefix,
+      name: info.name,
+      total: info.total ?? 0,
+      license,
+      licenseUrl: info.license?.url ?? "",
+      author: info.author?.name ?? "",
+      authorUrl: info.author?.url ?? "",
+      multicolor: info.palette === true,
+      category: info.category ?? "",
+      restrictive: RESTRICTIVE.test(license),
+      bundled,
+    });
+  }
+
+  const missing = BUNDLED.filter((p) => !manifest.some((s) => s.prefix === p));
+  if (missing.length) throw new Error(`bundled sets not in @iconify/json ${version}: ${missing.join(", ")}`);
+  await writeFile(pinFile, `${version}\n`);
+  await writeFile(join(dataDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFeatures(manifest);
+  await writeDocs(manifest, version);
+  console.log(`@iconify/json ${version}: ${manifest.length} sets, ${manifest.reduce((n, s) => n + s.total, 0)} icons`);
+}
+
+/** Rewrites the generated block of the crate's [features] table. */
+async function writeFeatures(manifest: ManifestEntry[]) {
+  const path = join(root, "crates/nsh-icons/Cargo.toml");
+  const toml = await readFile(path, "utf8");
+  const begin = "# BEGIN GENERATED SETS (tools/fetch-data.ts)";
+  const end = "# END GENERATED SETS";
+  const lines = manifest.filter((s) => s.bundled).map((s) => `${s.prefix} = []`);
+  const from = toml.indexOf(begin);
+  const to = toml.indexOf(end);
+  if (from < 0 || to < from) throw new Error(`${path}: no generated block markers`);
+  const next = `${toml.slice(0, from)}${begin}\n${lines.join("\n")}\n${toml.slice(to)}`;
+  await writeFile(path, next);
+}
+
+async function writeDocs(manifest: ManifestEntry[], version: string) {
+  const rows = manifest.map(
+    (s) =>
+      `| \`${s.prefix}\` | ${s.name} | ${s.total} | ${s.license}${s.restrictive ? " ⚠" : ""} | ${s.multicolor ? "multicolor" : "monotone"} | ${s.bundled ? "feature + CLI" : "CLI"} |`,
+  );
+  await writeFile(
+    join(root, "docs/sets.md"),
+    `# Icon sets
+
+Every set from [@iconify/json](https://github.com/iconify/icon-sets) ${version}: ${manifest.length} sets, ${manifest.reduce((n, s) => n + s.total, 0)} icons. The prefix is the CLI's \`set:\` name; for a bundled set it is also the Cargo feature and the Rust module (with \`-\` as \`_\`). ⚠ marks a copyleft or non-commercial license: using that set puts its terms on your app. Generated by \`tools/fetch-data.ts\`.
+
+| Prefix | Name | Icons | License | Colors | Rust |
+|---|---|---|---|---|---|
+${rows.join("\n")}
+`,
+  );
+  const notices = manifest.map(
+    (s) =>
+      `- **${s.name}** (\`${s.prefix}\`) by ${s.author || "unknown"}${s.authorUrl ? ` <${s.authorUrl}>` : ""}: ${s.license}${s.licenseUrl ? ` <${s.licenseUrl}>` : ""}`,
+  );
+  await writeFile(
+    join(root, "NOTICE.md"),
+    `# Notices
+
+The code in this repository is MIT licensed (\`LICENSE\`). The icon data is not ours, neither the sets bundled under \`crates/nsh-icons/data/sets\` nor the ones the CLI downloads: each set keeps its own license, listed below from @iconify/json ${version}. An app that ships a set's icons must follow that set's license, including attribution where it asks for it.
+
+${notices.join("\n")}
+`,
+  );
+}
+
+if (import.meta.main) await main();
