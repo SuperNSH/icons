@@ -153,12 +153,19 @@ jobs:
           nsh build 2>&1 | tee build.log
           ! grep -i warn build.log
           nsh test
-      - name: The gallery's generated files match what the CLI writes now
+      - name: The gallery's committed files match what the CLI writes now
+        working-directory: examples/gallery
+        # The same run writes src/data/ (gitignored) that the next step tests with.
+        run: |
+          node ../../packages/nsh-icons/cli/nsh-icons.ts gallery
+          git diff --exit-code -- .
+      - name: The gallery, checked and tested
         working-directory: examples/gallery
         run: |
-          node ../../packages/nsh-icons/cli/nsh-icons.ts add --out src/icons.ts
-          node ../../packages/nsh-icons/cli/nsh-icons.ts font --out assets/icons.ttf --map src/icon-font.ts
-          git diff --exit-code -- .
+          mkdir -p node_modules/nsh-icons
+          cp -r ../../packages/nsh-icons/src ../../packages/nsh-icons/package.json node_modules/nsh-icons/
+          nsh check
+          nsh test
 
   data:
     name: bundled data matches its pinned version
@@ -255,6 +262,14 @@ jobs:
         run: |
           mkdir -p examples/gallery/node_modules/nsh-icons
           cp -r packages/nsh-icons/src packages/nsh-icons/package.json examples/gallery/node_modules/nsh-icons/
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Write the gallery's data files
+        # src/data/ is gitignored (tens of megabytes), so every build writes it
+        # fresh. --data-only needs no installed libraries: the font is committed.
+        working-directory: examples/gallery
+        run: node ../../packages/nsh-icons/cli/nsh-icons.ts gallery --data-only
       - name: Package
         shell: bash
         working-directory: examples/gallery
