@@ -94,6 +94,10 @@ const setHits = computed(() => {
     .filter((hit) => hit.count > 0)
     .sort((a, b) => b.count - a.count);
 });
+const activeList = computed(() => {
+  const current = active();
+  return current ? [current] : [];
+});
 const siblings = computed(() => {
   void loadedTick();
   const current = active();
@@ -176,7 +180,7 @@ function Sidebar() {
           pickedSet.set(null);
           sidebarOpen.set(false);
         }}
-        class={() => `rounded-lg border border-border p-2 ${!pickedSet() ? "bg-primary/10" : "bg-card"}`}
+        class={`rounded-lg border border-border p-2 ${!pickedSet() ? "bg-primary/10" : "bg-card"}`}
       >
         <Text class="text-sm text-foreground">All sets</Text>
       </Button>
@@ -187,20 +191,16 @@ function Sidebar() {
               <Button
                 testID={`set-${meta().prefix}`}
                 onPress={() => openSet(meta())}
-                class={() => `flex-row items-center gap-3 rounded-lg border p-2 text-left ${pickedSet()?.prefix === meta().prefix ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+                class={`flex-row items-center gap-3 rounded-lg border p-2 text-left ${pickedSet()?.prefix === meta().prefix ? "border-primary bg-primary/10" : "border-border bg-card"}`}
               >
                 <View class="flex-row gap-1">
-                  <Each of={() => meta().samples.slice(0, 4)}>
+                  <Each of={meta().samples.slice(0, 4)}>
                     {(sample) => <Icon icon={sample()} size={16} color={meta().multicolor ? undefined : previewColor()} />}
                   </Each>
                 </View>
                 <View class="flex-1 gap-0.5">
-                  <Text class="text-sm font-medium text-foreground" numberOfLines={1}>
-                    {meta().name}
-                  </Text>
-                  <Text class={() => `text-xs ${meta().restrictive ? "text-amber-600" : "text-muted-foreground"}`} numberOfLines={1}>
-                    {`${meta().names.length.toLocaleString()} · ${meta().license}`}
-                  </Text>
+                  <Text class="line-clamp-1 text-sm font-medium text-foreground">{meta().name}</Text>
+                  <Text class={`line-clamp-1 text-xs ${meta().restrictive ? "text-amber-600" : "text-muted-foreground"}`}>{`${meta().names.length.toLocaleString()} · ${meta().license}`}</Text>
                 </View>
               </Button>
             )}
@@ -215,9 +215,7 @@ function Sidebar() {
           <Glyph glyph={phStarFill} size={22} color="#4f46e5" label="Star glyph" />
           <Glyph glyph={phGearFill} size={22} color="#4f46e5" label="Gear glyph" />
         </View>
-        <Text class="text-xs text-muted-foreground" numberOfLines={2}>
-          nsh-icons font builds the .ttf; importing its map registers it.
-        </Text>
+        <Text class="line-clamp-2 text-xs text-muted-foreground">nsh-icons font builds the .ttf; importing its map registers it.</Text>
       </View>
     </View>
   );
@@ -253,7 +251,7 @@ function Controls() {
               onPress={() => color.set(swatch())}
               selected={color() === swatch()}
               accessibilityLabel={swatch() ? `Tint ${swatch()}` : "Automatic tint"}
-              class={() => `size-5 items-center justify-center rounded-full border ${color() === swatch() ? "border-primary ring-2 ring-ring" : "border-border"}`}
+              class={`size-5 items-center justify-center rounded-full border ${color() === swatch() ? "border-primary ring-2 ring-ring" : "border-border"}`}
             >
               <View class="size-3.5 rounded-full" style={{ backgroundColor: swatch() ?? undefined }} />
             </Button>
@@ -280,7 +278,7 @@ function SuffixChips() {
       <Button
         testID="suffix-all"
         onPress={() => suffix.set(null)}
-        class={() => `rounded-full border px-2.5 py-1 text-xs ${!suffix() ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+        class={`rounded-full border px-2.5 py-1 text-xs ${!suffix() ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
       >
         All
       </Button>
@@ -289,7 +287,7 @@ function SuffixChips() {
           <Button
             testID={`suffix-${chip().token}`}
             onPress={() => suffix.set(chip().token)}
-            class={() => `rounded-full border px-2.5 py-1 text-xs ${suffix() === chip().token ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+            class={`rounded-full border px-2.5 py-1 text-xs ${suffix() === chip().token ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
           >
             {`${chip().token} ${chip().count}`}
           </Button>
@@ -301,7 +299,7 @@ function SuffixChips() {
 
 function Grid() {
   return (
-    <Each of={() => [columns()]}>
+    <Each of={[columns()]}>
       {(count) => (
         <List
           testID="grid"
@@ -316,16 +314,14 @@ function Grid() {
             <Button
               testID={`tile-${row().meta.prefix}-${row().name}`}
               onPress={() => openIcon(row().meta, row().name)}
-              class={() => `items-center gap-1.5 rounded-lg border p-2 ${darkGrid() ? "border-slate-700 bg-slate-900" : "border-border bg-card"}`}
+              class={`items-center gap-1.5 rounded-lg border p-2 ${darkGrid() ? "border-slate-700 bg-slate-900" : "border-border bg-card"}`}
             >
               {row().icon ? (
-                <Icon icon={row().icon} size={size()} color={row().icon.multicolor ? undefined : previewColor()} label={row().name} />
+                <Icon icon={row().icon!} size={size()} color={row().icon!.multicolor ? undefined : previewColor()} label={row().name} />
               ) : (
                 <View style={{ height: size(), width: size() }} />
               )}
-              <Text class={() => `w-full text-center text-[10px] ${darkGrid() ? "text-slate-400" : "text-muted-foreground"}`} numberOfLines={1}>
-                {row().name}
-              </Text>
+              <Text class={`line-clamp-1 w-full text-center text-[10px] ${darkGrid() ? "text-slate-400" : "text-muted-foreground"}`}>{row().name}</Text>
             </Button>
           )}
         </List>
@@ -336,22 +332,18 @@ function Grid() {
 
 function Home() {
   return (
-    <Each of={() => [columns()]}>
+    <Each of={[columns()]}>
       {(count) => (
         <List testID="home" each={SETS} numColumns={Math.max(2, count() - 2)} estimatedItemSize={130} contentClass="gap-2 p-2" class="flex-1">
           {(meta) => (
             <Button testID={`set-${meta().prefix}`} onPress={() => openSet(meta())} class="gap-2 rounded-lg border border-border bg-card p-3">
               <View class="flex-row gap-2">
-                <Each of={() => meta().samples}>
+                <Each of={meta().samples}>
                   {(sample) => <Icon icon={sample()} size={22} color={meta().multicolor ? undefined : previewColor()} />}
                 </Each>
               </View>
-              <Text class="text-sm font-medium text-foreground" numberOfLines={1}>
-                {meta().name}
-              </Text>
-              <Text class={() => `text-xs ${meta().restrictive ? "text-amber-600" : "text-muted-foreground"}`}>
-                {`${meta().names.length.toLocaleString()} icons · ${meta().license}`}
-              </Text>
+              <Text class="line-clamp-1 text-sm font-medium text-foreground">{meta().name}</Text>
+              <Text class={`text-xs ${meta().restrictive ? "text-amber-600" : "text-muted-foreground"}`}>{`${meta().names.length.toLocaleString()} icons · ${meta().license}`}</Text>
             </Button>
           )}
         </List>
@@ -366,7 +358,7 @@ function GlobalHits() {
       {(hit) => (
         <Button testID={`hit-${hit().meta.prefix}`} onPress={() => openSet(hit().meta)} class="flex-row items-center justify-between rounded-lg border border-border bg-card p-3">
           <View class="flex-row items-center gap-2">
-            <Each of={() => hit().meta.samples.slice(0, 3)}>
+            <Each of={hit().meta.samples.slice(0, 3)}>
               {(sample) => <Icon icon={sample()} size={18} color={hit().meta.multicolor ? undefined : previewColor()} />}
             </Each>
             <Text class="text-sm text-foreground">{hit().meta.name}</Text>
@@ -382,17 +374,15 @@ function Detail() {
   return (
     <Scroll testID="detail" class="w-80 shrink-0 border-l border-border">
       <View class="gap-4 p-4">
-        <Each of={active()}>
+        <Each of={activeList()}>
           {(current) => (
             <View class="gap-4">
-              <View class={() => `items-center rounded-xl border p-6 ${darkGrid() ? "border-slate-700 bg-slate-900" : "border-border bg-card"}`}>
+              <View class={`items-center rounded-xl border p-6 ${darkGrid() ? "border-slate-700 bg-slate-900" : "border-border bg-card"}`}>
                 <Icon icon={current().icon} size={96} color={current().icon.multicolor ? undefined : previewColor()} label={current().icon.name} />
               </View>
               <View class="gap-1">
                 <Text testID="detail-id" class="font-mono text-sm font-medium text-foreground">{`${current().icon.set}:${current().icon.name}`}</Text>
-                <Text class="text-xs text-muted-foreground" numberOfLines={1}>
-                  {`${current().meta.name} · ${current().meta.license}${current().meta.restrictive ? " (asks attribution or limits use)" : ""}`}
-                </Text>
+                <Text class="line-clamp-1 text-xs text-muted-foreground">{`${current().meta.name} · ${current().meta.license}${current().meta.restrictive ? " (asks attribution or limits use)" : ""}`}</Text>
                 <Text class="text-xs text-muted-foreground">{`${current().icon.viewBox[2]} × ${current().icon.viewBox[3]}${current().icon.multicolor ? " · multicolor" : ""}`}</Text>
               </View>
               <View class="gap-2">
@@ -402,11 +392,11 @@ function Detail() {
                     {(sibling) => (
                       <Button
                         testID={`sibling-${sibling().name}`}
-                        onPress={() => openIcon(active()!.meta, sibling().name)}
+                        onPress={() => openIcon(current().meta, sibling().name)}
                         class="items-center gap-1 rounded-lg border border-border bg-card p-1.5"
                       >
                         <Icon icon={sibling()} size={20} color={sibling().multicolor ? undefined : previewColor()} />
-                        <Text class="w-16 text-center text-[10px] text-muted-foreground" numberOfLines={1}>
+                        <Text class="line-clamp-1 w-16 text-center text-[10px] text-muted-foreground">
                           {sibling().name.slice(baseName(current().icon.name).length).replace(/^-/, "") || "base"}
                         </Text>
                       </Button>
@@ -415,7 +405,7 @@ function Detail() {
                 </View>
               </View>
               <View class="gap-1.5">
-                <Each of={() => copyActions(current().icon)}>
+                <Each of={copyActions(current().icon)}>
                   {(action) => (
                     <Button
                       testID={action().id}
@@ -423,9 +413,7 @@ function Detail() {
                       class="flex-row items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
                     >
                       <Text class="text-sm text-foreground">{`Copy ${action().label}`}</Text>
-                      <Text class="max-w-40 text-xs text-muted-foreground" numberOfLines={1}>
-                        {action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}
-                      </Text>
+                      <Text class="line-clamp-1 max-w-40 text-xs text-muted-foreground">{action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}</Text>
                     </Button>
                   )}
                 </Each>
