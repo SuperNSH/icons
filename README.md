@@ -92,6 +92,7 @@ GitHub Actions does all compiling and testing:
 - Runs the CLI's tests under Bun and the TSX package's tests under `nsh test`.
 - Checks that the committed data is the pinned release's.
 - On `master`, packages the gallery in `examples/gallery` for macOS, Linux and Windows on both x86_64 and arm64, plus the iOS simulator, Android and the web, into the `latest` release.
+- On `master`, deploys the gallery's web build to GitHub Pages at https://supernsh.github.io/nsh-icons/ (NSH's web build uses relative asset paths, so it serves from that subpath).
 
 A weekly workflow moves the pin to the newest `@iconify/json` and opens a pull request.
 
