@@ -1,6 +1,6 @@
 [package]
 name = "nsh-icons-codegen"
-description = "Iconify JSON to Rust for nsh-icons: alias resolution, identifiers and the generated modules"
+description = "Iconify JSON to Rust for supernsh-icons: alias resolution, identifiers and the generated modules"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

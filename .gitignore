@@ -3,5 +3,5 @@ target/
 node_modules/
 .DS_Store
 *.log
-# The gallery's per-set bodies: tens of megabytes, rewritten by `nsh-icons gallery`.
+# The gallery's per-set bodies: tens of megabytes, rewritten by `supernsh-icons gallery`.
 examples/gallery/src/data/

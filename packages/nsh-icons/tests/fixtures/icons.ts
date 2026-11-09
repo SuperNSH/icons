@@ -1,4 +1,4 @@
-// Hand-written icon data in the shape `nsh-icons add` writes.
+// Hand-written icon data in the shape `supernsh-icons add` writes.
 import type { IconData } from "../../src";
 
 export const fixtureArrow: IconData = {

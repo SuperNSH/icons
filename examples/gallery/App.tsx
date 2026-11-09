@@ -20,8 +20,8 @@ import {
   type WebViewRef,
 } from "nsh";
 import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Popover, Sheet, Slider } from "nsh/base";
-import { Glyph, Icon, svgMarkup, type IconData } from "nsh-icons";
-import { rustName, tsName } from "nsh-icons/iconify";
+import { Glyph, Icon, svgMarkup, type IconData } from "supernsh-icons";
+import { rustName, tsName } from "supernsh-icons/iconify";
 import { SETS, VERSION, type DemoSet } from "./src/demo-index";
 import { LAZY } from "./src/data/index";
 import { phGearFill, phHeartFill, phHouseFill, phStarFill } from "./src/icon-font";
@@ -207,16 +207,16 @@ function copyActions(icon: IconData): Array<{ id: string; label: string; text: (
   return [
     { id: "copy-id", label: "Iconify id", text: () => `${icon.set}:${icon.name}` },
     { id: "copy-svg", label: "SVG", text: () => svgMarkup(icon) },
-    { id: "copy-add", label: "add command", text: () => `nsh-icons add ${icon.set}:${icon.name} --out src/icons.ts` },
+    { id: "copy-add", label: "add command", text: () => `supernsh-icons add ${icon.set}:${icon.name} --out src/icons.ts` },
     {
       id: "copy-tsx",
       label: "TSX",
-      text: () => `import { Icon } from "nsh-icons";\nimport { ${ident} } from "./src/icons";\n\n<Icon icon={${ident}} size={${size()}}${color() ? ` color="${color()}"` : ""} label="${baseName(icon.name)}" />`,
+      text: () => `import { Icon } from "supernsh-icons";\nimport { ${ident} } from "./src/icons";\n\n<Icon icon={${ident}} size={${size()}}${color() ? ` color="${color()}"` : ""} label="${baseName(icon.name)}" />`,
     },
     {
       id: "copy-rust",
       label: "Rust",
-      text: () => `// Cargo.toml: nsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["${icon.set}"] }\nuse nsh_icons::{icon, ${module}};\n\nicon(${module}::${constant}).size(px(${size()}.0))`,
+      text: () => `// Cargo.toml: supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["${icon.set}"] }\nuse supernsh_icons::{icon, ${module}};\n\nicon(${module}::${constant}).size(px(${size()}.0))`,
     },
   ];
 }

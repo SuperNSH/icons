@@ -52,3 +52,22 @@ test("a set with weights gets its variant chips, and global search counts sets",
   await app.press("id:all-sets");
   await app.waitFor("id:hit-lucide");
 });
+
+test("the studio composes the export: shape, padding and fill retile the preview", async () => {
+  const app = await open("../App.tsx", { width: 1400, height: 900 });
+  await app.waitFor("id:card-lucide");
+  await app.press("id:card-lucide");
+  await app.type("id:search", "heart");
+  await app.waitFor("id:tile-lucide-heart");
+  await app.press("id:tile-lucide-heart");
+  await app.waitFor("id:studio-preview");
+  await app.press("id:studio-advanced");
+  await app.waitFor("id:studio-pad");
+  await app.press("id:studio-shape-circle");
+  await app.waitFor("id:studio-bg-gradient");
+  await app.press("id:studio-bg-gradient");
+  await app.waitFor("id:studio-bg-from");
+  await app.press("id:studio-fill-gradient");
+  await app.waitFor("id:studio-fg-from");
+  await app.waitFor("id:studio-preview");
+});

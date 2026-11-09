@@ -2,17 +2,17 @@
 //! constants, one Cargo feature per set, and icon-font glyphs.
 //!
 //! ```toml
-//! nsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["lucide"] }
+//! supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["lucide"] }
 //! ```
 //!
 //! ```ignore
-//! use nsh_icons::{icon, lucide};
+//! use supernsh_icons::{icon, lucide};
 //! icon(lucide::HEART).size(px(20.0)).text_color(move || theme().foreground)
 //! ```
 //!
 //! A monotone icon draws in `currentColor`, the element's text color, so it
 //! follows the theme. Sets outside the bundled ones, and icon fonts, come
-//! from the `nsh-icons` CLI in `packages/nsh-icons`.
+//! from the `supernsh-icons` CLI in `packages/nsh-icons`.
 
 use nsh_core::element::ImageSrc;
 use nsh_core::prelude::*;
@@ -104,7 +104,7 @@ pub fn icon(icon: Icon) -> Svg {
 #[native_module("nsh-icons/native")]
 fn native(_registry: &mut Registry) {}
 
-/// A glyph of an icon font the CLI made (`nsh-icons font`): register the
+/// A glyph of an icon font the CLI made (`supernsh-icons font`): register the
 /// font with `Root::font` (Rust) or by importing the `.ttf` (TSX).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Glyph {

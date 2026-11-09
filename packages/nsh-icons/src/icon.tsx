@@ -16,7 +16,7 @@ function uriOf(icon: IconData): string {
   return uri;
 }
 
-/** One glyph of a font `nsh-icons font` made. */
+/** One glyph of a font `supernsh-icons font` made. */
 export interface GlyphData {
   /** The font's family name: the default export of its `.ttf` import. */
   family: string;

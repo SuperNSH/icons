@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime};
 
 use nsh_core::prelude::*;
 use nsh_engine::{Clock, EngineConfig, Root};
-use nsh_icons::{Glyph, icon, logos, lookup, lucide};
+use supernsh_icons::{Glyph, icon, logos, lookup, lucide};
 use nsh_testing::Headless;
 
 #[test]
@@ -32,7 +32,7 @@ fn markup_is_a_whole_svg_document() {
 
 #[test]
 fn every_set_s_list_is_sorted_so_lookups_find_each_icon() {
-    for (info, icons) in nsh_icons::SETS {
+    for (info, icons) in supernsh_icons::SETS {
         assert!(
             icons.windows(2).all(|w| w[0].name < w[1].name),
             "{} is not sorted",
@@ -48,7 +48,7 @@ fn every_set_s_list_is_sorted_so_lookups_find_each_icon() {
 
 #[test]
 fn only_the_features_turned_on_are_generated() {
-    let prefixes: Vec<&str> = nsh_icons::SETS
+    let prefixes: Vec<&str> = supernsh_icons::SETS
         .iter()
         .map(|(info, _)| info.prefix)
         .collect();
@@ -68,7 +68,7 @@ fn IconScreen() -> impl IntoElement {
                 .accessible(true)
                 .label("Like"),
         )
-        .child(nsh_icons::glyph(glyph))
+        .child(supernsh_icons::glyph(glyph))
         .child(text("ready"))
 }
 

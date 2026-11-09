@@ -1,5 +1,5 @@
 [package]
-name = "nsh-icons"
+name = "supernsh-icons"
 description = "Every Iconify icon set for Native Shell apps: typed SVG icons behind one Cargo feature per set, and icon-font glyphs"
 version.workspace = true
 edition.workspace = true
@@ -10,7 +10,7 @@ authors.workspace = true
 include = ["src/**", "data/**", "build.rs", "Cargo.toml"]
 
 [lib]
-name = "nsh_icons"
+name = "supernsh_icons"
 path = "src/lib.rs"
 
 [dependencies]

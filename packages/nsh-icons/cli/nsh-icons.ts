@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// nsh-icons: puts icons from any Iconify set into an NSH app, as SVG data
+// supernsh-icons: puts icons from any Iconify set into an NSH app, as SVG data
 // (TS or Rust) or as an icon font. Runs on Node 24 (type stripping) or Bun.
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -10,19 +10,19 @@ import { DEMO_FONT_IDS, dataModule, dataIndex, demoIndex, demoSet, type DemoSet 
 import { buildFont, glyphModule, iconModule, idsIn, type Lang, parseId, type Picked, pick } from "./generate.ts";
 import { bundledManifest, listSets, loadSet } from "./sources.ts";
 
-const USAGE = `nsh-icons: icons from every Iconify set, for NSH apps
+const USAGE = `supernsh-icons: icons from every Iconify set, for NSH apps
 
-  nsh-icons add <set:name>... [--out src/icons.ts] [--lang ts|rust]
+  supernsh-icons add <set:name>... [--out src/icons.ts] [--lang ts|rust]
       Writes the icons as data, adding them to what --out already lists.
-  nsh-icons font <set:name>... --out assets/icons.ttf [--map src/icon-font.ts]
+  supernsh-icons font <set:name>... --out assets/icons.ttf [--map src/icon-font.ts]
                  [--family NshIcons] [--lang ts|rust]
       Builds an icon font of filled, one-color icons and its glyph map.
-  nsh-icons gallery [--out examples/gallery] [--sets lucide,ph] [--data-only]
+  supernsh-icons gallery [--out examples/gallery] [--sets lucide,ph] [--data-only]
       Writes the icon explorer demo's data: the set index it commits, each
       set's bodies as their own module, and the demo's font showcase.
-  nsh-icons search <text> --set <prefix>
+  supernsh-icons search <text> --set <prefix>
       Lists the icons of a set whose names contain the text.
-  nsh-icons sets
+  supernsh-icons sets
       Lists every set: prefix, icons, license, and whether the Rust crate bundles it.
 
 Ids are Iconify's: lucide:heart, ph:star-fill, mdi:home. Browse them at https://icon-sets.iconify.design.`;
@@ -81,7 +81,7 @@ export async function main(argv: string[]): Promise<number> {
     case "add": {
       const out = resolve(values.out ?? `src/icons.${ext}`);
       const existing = existsSync(out) ? idsIn(await readFile(out, "utf8")) : [];
-      if (!rest.length && !existing.length) throw new Error("name at least one icon: nsh-icons add lucide:heart");
+      if (!rest.length && !existing.length) throw new Error("name at least one icon: supernsh-icons add lucide:heart");
       const icons = await pickAll([...existing, ...rest]);
       await write(out, iconModule(icons, lang));
       console.log(`${relative(process.cwd(), out)}: ${icons.length} icons`);
@@ -93,7 +93,7 @@ export async function main(argv: string[]): Promise<number> {
       const map = resolve(values.map ?? `src/icon-font.${ext}`);
       const existing = existsSync(map) ? idsIn(await readFile(map, "utf8")) : [];
       const icons = await pickAll([...existing, ...rest]);
-      if (!icons.length) throw new Error("name at least one icon: nsh-icons font ph:star-fill --out assets/icons.ttf");
+      if (!icons.length) throw new Error("name at least one icon: supernsh-icons font ph:star-fill --out assets/icons.ttf");
       await write(out, await buildFont(icons, values.family!));
       await write(map, glyphModule(icons, values.family!, importPath(map, out), lang));
       console.log(`${relative(process.cwd(), out)} and ${relative(process.cwd(), map)}: ${icons.length} glyphs`);
@@ -134,7 +134,7 @@ export async function main(argv: string[]): Promise<number> {
       return 0;
     }
     case "search": {
-      if (!values.set || !rest.length) throw new Error("nsh-icons search <text> --set <prefix>");
+      if (!values.set || !rest.length) throw new Error("supernsh-icons search <text> --set <prefix>");
       const { set } = await loadSet(values.set);
       const text = rest.join("-").toLowerCase();
       const found = resolveAll(set).filter((i) => i.name.includes(text));
@@ -156,7 +156,7 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
     (error: Error) => {
-      console.error(`nsh-icons: ${error.message}`);
+      console.error(`supernsh-icons: ${error.message}`);
       process.exit(1);
     },
   );

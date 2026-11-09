@@ -1,6 +1,6 @@
 // Icon data and its SVG document, with no `nsh` import, so the CLI shares it.
 
-/** One icon as `nsh-icons add` writes it into an app. */
+/** One icon as `supernsh-icons add` writes it into an app. */
 export interface IconData {
   /** The set's prefix, such as `lucide`. */
   set: string;

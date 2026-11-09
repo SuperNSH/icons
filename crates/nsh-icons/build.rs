@@ -31,7 +31,7 @@ fn main() {
             .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
         if let Some(license) = nsh_icons_codegen::restrictive_license(&module) {
             println!(
-                "cargo:warning=nsh-icons: the `{prefix}` set is {license}; an app that ships its icons takes on those terms"
+                "cargo:warning=supernsh-icons: the `{prefix}` set is {license}; an app that ships its icons takes on those terms"
             );
         }
         out.push_str(&module);

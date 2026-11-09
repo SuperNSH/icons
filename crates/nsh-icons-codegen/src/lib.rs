@@ -1,6 +1,6 @@
 //! Turns an Iconify JSON icon set into Rust source: aliases resolved to
 //! their parent's body with flips and rotations applied, names made into
-//! identifiers, and one module of `Icon` constants per set. `nsh-icons`'s
+//! identifiers, and one module of `Icon` constants per set. `supernsh-icons`'s
 //! build script runs it for the sets an app turns on; the TypeScript CLI
 //! (`packages/nsh-icons/src/iconify.ts`) does the same steps, and the shared
 //! fixtures in `fixtures/` hold both to the same output.
@@ -322,7 +322,7 @@ fn identifier(name: &str, upper: bool) -> String {
 }
 
 /// The module text for one set: a constant per icon, and `set::INFO` and
-/// `set::ALL` (sorted by name for `nsh_icons::find`).
+/// `set::ALL` (sorted by name for `supernsh_icons::find`).
 pub fn module(set: &SetInfo, icons: &[Resolved], total: usize) -> Result<String, Error> {
     let mut seen: BTreeMap<String, &str> = BTreeMap::new();
     for icon in icons {

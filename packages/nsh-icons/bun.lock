@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "nsh-icons",
+      "name": "supernsh-icons",
       "dependencies": {
         "svg2ttf": "6.1.0",
         "svgicons2svgfont": "16.0.0",

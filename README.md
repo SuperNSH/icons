@@ -1,10 +1,10 @@
-# nsh-icons
+# supernsh-icons
 
 Icons for [Native Shell](https://nsh.dev) apps, in Rust and in TSX, from every [Iconify](https://iconify.design) set: Lucide, Phosphor, Tabler, Material Symbols, Material Design Icons, Font Awesome, Heroicons, Remix, Bootstrap, Fluent, Simple Icons, logos, flags and about 250 more. That is 260 sets and roughly 465,000 icons.
 
 - **SVG first.** Icons draw natively and stay sharp at any size. A one-color icon takes the text color, so it follows the theme. Logos and flags keep their own colors.
 - **Only what you use ships.** Rust turns on one Cargo feature per set, and only the icons you name end up in the binary. TSX apps get a generated file holding just the icons they asked for.
-- **Icon fonts too.** `nsh-icons font` builds a `.ttf` of the icons you list, with a map of their code points.
+- **Icon fonts too.** `supernsh-icons font` builds a `.ttf` of the icons you list, with a map of their code points.
 
 `docs/sets.md` lists every set with its icon count and license. `docs/decisions.md` says why it works this way.
 
@@ -14,18 +14,18 @@ Icons for [Native Shell](https://nsh.dev) apps, in Rust and in TSX, from every [
 
 ```toml
 [dependencies]
-nsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["lucide", "logos"] }
+supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["lucide", "logos"] }
 ```
 
 ```rust
-use nsh_icons::{icon, logos, lucide};
+use supernsh_icons::{icon, logos, lucide};
 
 view()
     .child(icon(lucide::HEART).size(px(20.0)).text_color(move || theme().foreground))
     .child(icon(logos::RUST).size(px(20.0)))
 ```
 
-`icon` returns NSH's `Svg` element, so it takes any style. Give it `.accessible(true).label("Like")` when it stands alone, as a button's only content does. Each set's module has `set::INFO` (name, license, count) and `set::ALL`, which is sorted. `nsh_icons::lookup("lucide:heart")` finds an icon by its Iconify id among the sets you turned on.
+`icon` returns NSH's `Svg` element, so it takes any style. Give it `.accessible(true).label("Like")` when it stands alone, as a button's only content does. Each set's module has `set::INFO` (name, license, count) and `set::ALL`, which is sorted. `supernsh_icons::lookup("lucide:heart")` finds an icon by its Iconify id among the sets you turned on.
 
 The bundled sets are `akar-icons`, `ant-design`, `bi`, `bx`, `carbon`, `circle-flags`, `codicon`, `devicon`, `fa7-brands`, `fa7-regular`, `fa7-solid`, `fe`, `flag`, `fluent`, `heroicons`, `hugeicons`, `iconoir`, `ion`, `line-md`, `logos`, `lucide`, `majesticons`, `material-symbols`, `mdi`, `mingcute`, `mynaui`, `octicon`, `ph`, `radix-icons`, `ri`, `simple-icons`, `solar`, `streamline`, `svg-spinners` and `tabler`. For any other set, use the CLI with `--lang rust`, below.
 
@@ -34,11 +34,11 @@ The bundled sets are `akar-icons`, `ant-design`, `bi`, `bx`, `carbon`, `circle-f
 Add the package from `packages/nsh-icons` to the app's `node_modules`, then write the icons you use into a file:
 
 ```sh
-npx nsh-icons add lucide:heart ph:star-fill logos:github-icon --out src/icons.ts
+npx supernsh-icons add lucide:heart ph:star-fill logos:github-icon --out src/icons.ts
 ```
 
 ```tsx
-import { Icon } from "nsh-icons";
+import { Icon } from "supernsh-icons";
 import { lucideHeart } from "./src/icons";
 
 <Icon icon={lucideHeart} size={20} color="#4f46e5" label="Like" />
@@ -51,31 +51,31 @@ Running `add` again with more ids adds them to the file. The first line of the f
 It runs on Node 24 or Bun.
 
 ```sh
-nsh-icons add <set:name>... [--out src/icons.ts] [--lang ts|rust]
-nsh-icons font <set:name>... --out assets/icons.ttf [--map src/icon-font.ts] [--family NshIcons] [--lang ts|rust]
-nsh-icons gallery [--out examples/gallery] [--sets lucide,ph] [--data-only]
-nsh-icons search <text> --set <prefix>
-nsh-icons sets
+supernsh-icons add <set:name>... [--out src/icons.ts] [--lang ts|rust]
+supernsh-icons font <set:name>... --out assets/icons.ttf [--map src/icon-font.ts] [--family NshIcons] [--lang ts|rust]
+supernsh-icons gallery [--out examples/gallery] [--sets lucide,ph] [--data-only]
+supernsh-icons search <text> --set <prefix>
+supernsh-icons sets
 ```
 
 - Ids are Iconify's, and you can browse them at [icon-sets.iconify.design](https://icon-sets.iconify.design).
-- A bundled set comes from the repository's pinned data. Any other set comes from its `@iconify-json/<prefix>` npm package and is cached under `~/.cache/nsh-icons`. The generated file names the source and version.
-- `--lang rust` writes `pub const` items of `nsh_icons::Icon`, for icons from sets the crate does not bundle.
+- A bundled set comes from the repository's pinned data. Any other set comes from its `@iconify-json/<prefix>` npm package and is cached under `~/.cache/supernsh-icons`. The generated file names the source and version.
+- `--lang rust` writes `pub const` items of `supernsh_icons::Icon`, for icons from sets the crate does not bundle.
 
 ## Icon fonts
 
 ```sh
-nsh-icons font ph:house-fill ph:heart-fill --out assets/icons.ttf --map src/icon-font.ts
+supernsh-icons font ph:house-fill ph:heart-fill --out assets/icons.ttf --map src/icon-font.ts
 ```
 
 ```tsx
-import { Glyph } from "nsh-icons";
+import { Glyph } from "supernsh-icons";
 import { phHeartFill } from "./src/icon-font"; // importing it registers the font
 
 <Glyph glyph={phHeartFill} size={24} color="#4f46e5" label="Liked" />
 ```
 
-In Rust, `--lang rust` writes `FONT` (the font's bytes) and one `nsh_icons::Glyph` per icon. Register the font with `Root::font(FONT)` and draw a glyph with `nsh_icons::glyph(..)`.
+In Rust, `--lang rust` writes `FONT` (the font's bytes) and one `supernsh_icons::Glyph` per icon. Register the font with `Root::font(FONT)` and draw a glyph with `supernsh_icons::glyph(..)`.
 
 A font holds one-color filled outlines. The CLI refuses icons drawn with strokes, which covers Lucide, Tabler and most outline sets, and multicolor icons. Use the SVG form for those. Filled sets such as Phosphor's `-fill` icons, Material Design Icons, Material Symbols and Font Awesome work.
 
@@ -99,4 +99,4 @@ A weekly workflow moves the pin to the newest `@iconify/json` and opens a pull r
 
 ## The gallery
 
-`examples/gallery` is an icon explorer over every bundled set, offline: search all 133,000 icon names at once, browse a set with variant chips (`ph`'s `-fill`, `-duotone`...), see an icon's sibling variants, and copy what an app pastes — the Iconify id, the SVG, the `nsh-icons add` command, a TSX snippet or the Rust constant. `nsh-icons gallery` writes its data: the set index it commits, and one module of bodies per set, loaded when a set is opened. CI does not compare rendered pixels, so to browse the icons, open a gallery build from the release.
+`examples/gallery` is an icon explorer over every bundled set, offline: search all 133,000 icon names at once, browse a set with variant chips (`ph`'s `-fill`, `-duotone`...), see an icon's sibling variants, and copy what an app pastes — the Iconify id, the SVG, the `supernsh-icons add` command, a TSX snippet or the Rust constant. `supernsh-icons gallery` writes its data: the set index it commits, and one module of bodies per set, loaded when a set is opened. CI does not compare rendered pixels, so to browse the icons, open a gallery build from the release.

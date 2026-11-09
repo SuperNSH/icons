@@ -9,7 +9,7 @@ i=0
 for set in $sets; do
   if [ $((i % count)) -eq "$shard" ]; then
     echo "::group::$set"
-    cargo check -p nsh-icons --features "$set"
+    cargo check -p supernsh-icons --features "$set"
     echo "::endgroup::"
   fi
   i=$((i + 1))

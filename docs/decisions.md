@@ -8,14 +8,14 @@ The libraries this follows split by platform. On the web and in Rust UI crates, 
 
 NSH draws SVG natively: `svg()` turns the document into a canvas the platform draws at device pixels, and `currentColor` is the element's text color. So SVG is sharp at every size, tints from the theme, and keeps multicolor sets (logos, flags) in their own colors. A font can do none of the last.
 
-Fonts are still useful when an app wants one file and text-like glyphs, so `nsh-icons font` builds one. It refuses icons drawn with strokes (Lucide, Tabler and most outline sets) and multicolor ones, and says to use the SVG form for those. A font holds one-color filled outlines, and turning strokes into outlines would change how the icons look.
+Fonts are still useful when an app wants one file and text-like glyphs, so `supernsh-icons font` builds one. It refuses icons drawn with strokes (Lucide, Tabler and most outline sets) and multicolor ones, and says to use the SVG form for those. A font holds one-color filled outlines, and turning strokes into outlines would change how the icons look.
 
 ## Every Iconify set, in two tiers
 
 Iconify's `@iconify/json` has every set we would want, already normalized: 260 sets and about 465,000 icons in 2.2.554. Its gzipped JSON for all of them is 122 MB. A Cargo git dependency clones the whole repository, and weekly updates add to its history, so committing all of it would make every app's first build download that.
 
 - **Bundled (35 sets, 22 MB, about 115,000 icons).** The most used UI sets, brands, logos and flags, listed in `tools/sets.ts`. Each is a Cargo feature, and `build.rs` generates typed constants only for the features an app turns on. A set left off costs nothing.
-- **Everything else, through the CLI.** `nsh-icons add set:name` fetches the set's own `@iconify-json/<prefix>` package, caches it, and writes just the named icons into the app, as TS or as Rust constants. This is how unplugin-icons and shadcn work: the app holds only the icons it uses.
+- **Everything else, through the CLI.** `supernsh-icons add set:name` fetches the set's own `@iconify-json/<prefix>` package, caches it, and writes just the named icons into the app, as TS or as Rust constants. This is how unplugin-icons and shadcn work: the app holds only the icons it uses.
 
 The CLI uses the bundled data when it runs from a checkout, so the TS and Rust forms of a bundled icon are byte for byte the same.
 
@@ -47,7 +47,7 @@ The private use area keeps glyphs from clashing with real characters. Sorting by
 
 `examples/gallery` shows what the library holds: every bundled set's icons, searchable, with variant chips, sibling variants, and the id, SVG, `add` command, TSX and Rust snippets an app pastes. All of it works offline, because the data ships inside the app.
 
-NSH bundles an asset only when the app imports it as an image or a font, and both get parsed, so the bodies cannot ride along as files. `nsh-icons gallery` writes them as code instead: `src/demo-index.ts`, committed, holds each set's metadata and every icon name (3.5 MB — the whole corpus searches instantly); `src/data/<prefix>.ts`, one module per set and gitignored (85 MB together), holds the bodies in the same order, loaded by a dynamic `import()` so the bundler splits them and a set loads only when opened. CI writes `src/data/` back before checking and packaging, the same way `fetch-data.ts` owns the crate's data.
+NSH bundles an asset only when the app imports it as an image or a font, and both get parsed, so the bodies cannot ride along as files. `supernsh-icons gallery` writes them as code instead: `src/demo-index.ts`, committed, holds each set's metadata and every icon name (3.5 MB — the whole corpus searches instantly); `src/data/<prefix>.ts`, one module per set and gitignored (85 MB together), holds the bodies in the same order, loaded by a dynamic `import()` so the bundler splits them and a set loads only when opened. CI writes `src/data/` back before checking and packaging, the same way `fetch-data.ts` owns the crate's data.
 
 Variants are Iconify names with suffixes (`heart-fill`, `heart-duotone`), not a separate axis, so the demo derives its chips and its sibling grouping by stripping the suffixes sets actually use. `nsh.json` grants the `clipboard` capability for the copy actions; with the key present but empty, NSH would deny the clipboard.
 

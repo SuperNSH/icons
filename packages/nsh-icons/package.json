@@ -1,5 +1,5 @@
 {
-  "name": "nsh-icons",
+  "name": "supernsh-icons",
   "version": "0.1.0",
   "description": "Every Iconify icon set for Native Shell TSX apps: an Icon component, and a CLI that writes only the icons you use, as SVG data or an icon font",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "./iconify": "./src/iconify.ts"
   },
   "bin": {
-    "nsh-icons": "./cli/nsh-icons.ts"
+    "supernsh-icons": "./cli/nsh-icons.ts"
   },
   "files": [
     "src",

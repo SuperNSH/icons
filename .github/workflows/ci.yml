@@ -59,10 +59,10 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
       - run: cargo clippy -p nsh-icons-codegen --all-targets -- -D warnings
-      - run: cargo clippy -p nsh-icons --all-targets --features lucide,logos -- -D warnings
+      - run: cargo clippy -p supernsh-icons --all-targets --features lucide,logos -- -D warnings
       # The codegen tests read every bundled set; the crate's tests run with two sets on.
       - run: cargo test -p nsh-icons-codegen --no-fail-fast
-      - run: cargo test -p nsh-icons --features lucide,logos --no-fail-fast
+      - run: cargo test -p supernsh-icons --features lucide,logos --no-fail-fast
 
   sets:
     name: every set compiles (${{ matrix.shard }}/4)
@@ -123,7 +123,7 @@ jobs:
           echo "CC_aarch64_linux_android=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
           echo "AR_aarch64_linux_android=$bin/llvm-ar" >> "$GITHUB_ENV"
           echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
-      - run: cargo clippy -p nsh-icons --target ${{ matrix.target }} --features lucide,logos -- -D warnings
+      - run: cargo clippy -p supernsh-icons --target ${{ matrix.target }} --features lucide,logos -- -D warnings
 
   typescript:
     runs-on: ubuntu-latest
@@ -162,8 +162,8 @@ jobs:
       - name: The gallery, checked and tested
         working-directory: examples/gallery
         run: |
-          mkdir -p node_modules/nsh-icons
-          cp -r ../../packages/nsh-icons/src ../../packages/nsh-icons/package.json node_modules/nsh-icons/
+          mkdir -p node_modules/supernsh-icons
+          cp -r ../../packages/nsh-icons/src ../../packages/nsh-icons/package.json node_modules/supernsh-icons/
           nsh check
           nsh test
 
@@ -260,8 +260,8 @@ jobs:
         # A copy, not a link: Windows symlinks need a privilege the runner lacks.
         shell: bash
         run: |
-          mkdir -p examples/gallery/node_modules/nsh-icons
-          cp -r packages/nsh-icons/src packages/nsh-icons/package.json examples/gallery/node_modules/nsh-icons/
+          mkdir -p examples/gallery/node_modules/supernsh-icons
+          cp -r packages/nsh-icons/src packages/nsh-icons/package.json examples/gallery/node_modules/supernsh-icons/
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24

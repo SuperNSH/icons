@@ -51,7 +51,7 @@ const fetchBytes: Fetcher = async (url) => {
 };
 
 function cacheDir(): string {
-  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "nsh-icons");
+  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "supernsh-icons");
 }
 
 /** The set with this prefix, from the bundled data or npm. */
