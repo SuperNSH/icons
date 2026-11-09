@@ -1,8 +1,25 @@
 // The icon explorer: every bundled set's icons, searchable, with variant
 // filters, sibling variants, and the snippets an app pastes. The data is
 // `nsh-icons gallery`'s: src/demo-index.ts for names, src/data/ for bodies.
-import { Clipboard, computed, effect, keymap, List, mount, Scroll, signal, Text, View, windowSize, type InputRef } from "nsh";
-import { Button, Input, Sheet } from "nsh/base";
+import {
+  Clipboard,
+  colorScheme,
+  computed,
+  effect,
+  keymap,
+  List,
+  mount,
+  platform,
+  Scroll,
+  signal,
+  Text,
+  View,
+  WebView,
+  windowSize,
+  type InputRef,
+  type WebViewRef,
+} from "nsh";
+import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Popover, Sheet, Slider } from "nsh/base";
 import { Glyph, Icon, svgMarkup, type IconData } from "nsh-icons";
 import { rustName, tsName } from "nsh-icons/iconify";
 import { SETS, VERSION, type DemoSet } from "./src/demo-index";
@@ -12,7 +29,7 @@ import { phGearFill, phHeartFill, phHouseFill, phStarFill } from "./src/icon-fon
 /** The variant endings sets use: each becomes a filter chip, stripped to group siblings. */
 const SUFFIXES = ["bold", "bulk", "duotone", "fill", "filled", "light", "line", "outline", "regular", "rounded", "sharp", "solid", "thin", "twotone"];
 
-const COLORS = [null, "#4f46e5", "#dc2626", "#16a34a", "#f59e0b", "#0ea5e9"];
+const PRESETS = ["#4f46e5", "#dc2626", "#16a34a", "#f59e0b", "#0ea5e9"];
 const RESULT_CAP = 3000;
 
 const query = signal("");
@@ -21,10 +38,16 @@ const suffix = signal<string | null>(null);
 const active = signal<{ icon: IconData; meta: DemoSet } | null>(null);
 const size = signal(28);
 const color = signal<string | null>(null);
-const darkGrid = signal(false);
+const customColor = signal(PRESETS[0]);
+const pickerOpen = signal(false);
+/** Preview the grid on the appearance the app is not in. */
+const flipCanvas = signal(false);
 const sidebarOpen = signal(false);
 const toast = signal("");
 const loadedTick = signal(0);
+
+/** The app runs in a browser: the only target where a file can be saved. */
+const isWeb = platform.os === "web";
 
 /** Each set's icons, kept once loaded; `loadedTick` announces a new set. */
 const cache = new Map<string, IconData[]>();
@@ -115,10 +138,47 @@ const columns = computed(() => {
   const width = windowSize().width;
   return width < 640 ? 4 : width < 900 ? 5 : width < 1280 ? 6 : 7;
 });
-const previewColor = () => color() ?? (darkGrid() ? "#f8fafc" : "#0f172a");
+/** The canvas the icons sit on: the theme's, or the other one while previewed. */
+const canvasDark = computed(() => {
+  const dark = colorScheme() === "dark";
+  return flipCanvas() ? !dark : dark;
+});
+/** The tint of a monotone icon: the picked color, else one that reads on the canvas. */
+const previewColor = () => color() ?? (canvasDark() ? "#f8fafc" : "#0f172a");
+const tileFrame = () => (flipCanvas() ? (canvasDark() ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white") : "border-border bg-card");
+const tileLabel = () => (flipCanvas() ? (canvasDark() ? "text-slate-400" : "text-slate-500") : "text-muted-foreground");
 const total = SETS.reduce((sum, meta) => sum + meta.names.length, 0).toLocaleString();
 
 let searchRef: InputRef | null = null;
+let downloader: WebViewRef | null = null;
+
+/** The page real downloads run in: TSX reaches no DOM, so the `<a download>`
+ * a file save needs lives in a web view, whose sandbox allows downloads. */
+const DOWNLOADER = `<!doctype html><html><head><meta charset="utf-8"></head><body><script>
+addEventListener("message", (event) => {
+  let job = null;
+  try { job = JSON.parse(String(event.data)); } catch { return; }
+  if (!job || job.kind !== "download") return;
+  const url = URL.createObjectURL(new Blob([job.text], { type: job.mime }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = job.name;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+});
+</script></body></html>`;
+
+function announce(text: string) {
+  toast.set(text);
+  setTimeout(() => toast.set(""), 1800);
+}
+
+function download(name: string, text: string, mime: string) {
+  downloader?.postMessage(JSON.stringify({ kind: "download", name, text, mime }));
+  announce(`Saving ${name}`);
+}
 
 async function openSet(meta: DemoSet) {
   pickedSet.set(meta);
@@ -135,14 +195,8 @@ async function openIcon(meta: DemoSet, name: string) {
 
 function copied(what: string, text: string) {
   Clipboard.writeText(text).then(
-    () => {
-      toast.set(`Copied ${what}`);
-      setTimeout(() => toast.set(""), 1800);
-    },
-    () => {
-      toast.set("The clipboard said no");
-      setTimeout(() => toast.set(""), 1800);
-    },
+    () => announce(`Copied ${what}`),
+    () => announce("The clipboard said no"),
   );
 }
 
@@ -221,6 +275,95 @@ function Sidebar() {
   );
 }
 
+function SizeControl() {
+  return (
+    <View class="h-9 flex-row items-center gap-2 rounded-lg border border-border bg-card px-3">
+      <Slider
+        testID="size"
+        value={size()}
+        min={16}
+        max={64}
+        step={4}
+        accessibilityLabel="Icon size"
+        onChange={(event) => size.set(event.value as number)}
+        class="w-24"
+        trackClass="h-6 justify-center"
+        indicatorClass="h-1.5 rounded-full bg-muted"
+        rangeClass="rounded-full bg-primary"
+        thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
+      >
+        <Text testID="size-value" class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${size()}px`}</Text>
+      </Slider>
+    </View>
+  );
+}
+
+function ColorControls() {
+  return (
+    <View class="flex-row items-center gap-1.5 rounded-lg border border-border bg-card px-1.5 py-1">
+      <Button
+        testID="color-auto"
+        onPress={() => color.set(null)}
+        selected={color() === null}
+        accessibilityLabel="Automatic tint"
+        class={`size-6 items-center justify-center rounded-full border ${color() === null ? "border-primary ring-2 ring-ring" : "border-border"}`}
+      >
+        <View class="size-4 rounded-full border border-border" />
+      </Button>
+      <Each of={PRESETS}>
+        {(preset) => (
+          <ColorSwatch
+            color={preset()}
+            onPress={() => color.set(preset())}
+            accessibilityLabel={`Tint ${preset()}`}
+            class={`size-6 rounded-full border ${color() === preset() ? "border-primary ring-2 ring-ring" : "border-transparent"}`}
+          />
+        )}
+      </Each>
+      <Popover
+        open={pickerOpen()}
+        onOpenChange={(event) => pickerOpen.set(event.open)}
+        align="end"
+        trigger={
+          <Button
+            testID="color-custom"
+            accessibilityLabel="Custom color"
+            class={`size-6 items-center justify-center rounded-full border ${color() !== null && color() === customColor() ? "border-primary ring-2 ring-ring" : "border-border"}`}
+          >
+            <View class="size-4 rounded-full" style={{ backgroundColor: customColor() }} />
+          </Button>
+        }
+        popupClass="w-64 rounded-lg border border-border bg-popover p-3 shadow-lg"
+      >
+        <ColorPicker
+          value={customColor()}
+          format="hex"
+          onChange={(event) => {
+            customColor.set(event.formatted);
+            color.set(event.formatted);
+          }}
+          class="gap-3"
+        >
+          <ColorArea accessibilityLabel="Shade" class="h-32" panelClass="rounded-md" fillThumb />
+          <ColorSlider
+            colorSpace="hsb"
+            channel="hue"
+            accessibilityLabel="Hue"
+            class="h-6 justify-center"
+            trackClass="h-4 rounded-full"
+            thumbClass="size-4 rounded-full border-2 border-background"
+            fillThumb
+          />
+          <View class="flex-row items-center gap-2">
+            <ColorSwatch class="size-7 shrink-0 rounded-md border border-border" />
+            <ColorField accessibilityLabel="Color as hex" class="h-7 flex-1 rounded-md border border-input bg-background px-2 font-mono text-xs text-foreground" />
+          </View>
+        </ColorPicker>
+      </Popover>
+    </View>
+  );
+}
+
 function Controls() {
   return (
     <View class="flex-row flex-wrap items-center gap-2">
@@ -230,40 +373,19 @@ function Controls() {
           ref={(node) => (searchRef = node)}
           value={query()}
           onChange={(event) => query.set(event.value)}
+          accessibilityLabel="Search icons"
           placeholder={`Search ${total} icons (name or variant)`}
           class="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground"
         />
       </View>
-      <View class="flex-row items-center gap-1 rounded-lg border border-border bg-card px-1.5 py-1">
-        <Button testID="size-down" onPress={() => size.update((n) => Math.max(16, n - 4))} class="rounded px-2 py-0.5 text-sm text-foreground">
-          −
-        </Button>
-        <Text class="w-8 text-center text-xs text-muted-foreground">{`${size()}px`}</Text>
-        <Button testID="size-up" onPress={() => size.update((n) => Math.min(64, n + 4))} class="rounded px-2 py-0.5 text-sm text-foreground">
-          +
-        </Button>
-      </View>
-      <View class="flex-row items-center gap-1 rounded-lg border border-border bg-card px-1.5 py-1.5">
-        <Each of={COLORS}>
-          {(swatch) => (
-            <Button
-              testID={`color-${swatch() ?? "auto"}`}
-              onPress={() => color.set(swatch())}
-              selected={color() === swatch()}
-              accessibilityLabel={swatch() ? `Tint ${swatch()}` : "Automatic tint"}
-              class={`size-5 items-center justify-center rounded-full border ${color() === swatch() ? "border-primary ring-2 ring-ring" : "border-border"}`}
-            >
-              <View class="size-3.5 rounded-full" style={{ backgroundColor: swatch() ?? undefined }} />
-            </Button>
-          )}
-        </Each>
-      </View>
-      <Button testID="dark" onPress={() => darkGrid.update((dark) => !dark)} class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm text-foreground">
-        {darkGrid() ? "Light grid" : "Dark grid"}
+      <SizeControl />
+      <ColorControls />
+      <Button testID="canvas" onPress={() => flipCanvas.update((flip) => !flip)} class="rounded-lg border border-border bg-card px-2.5 py-1.5">
+        <Text class="text-sm text-foreground">{canvasDark() ? "Light canvas" : "Dark canvas"}</Text>
       </Button>
       {narrow() ? (
-        <Button testID="sets-button" onPress={() => sidebarOpen.set(true)} class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm text-foreground">
-          Sets
+        <Button testID="sets-button" onPress={() => sidebarOpen.set(true)} class="rounded-lg border border-border bg-card px-2.5 py-1.5">
+          <Text class="text-sm text-foreground">Sets</Text>
         </Button>
       ) : (
         <View />
@@ -278,18 +400,18 @@ function SuffixChips() {
       <Button
         testID="suffix-all"
         onPress={() => suffix.set(null)}
-        class={`rounded-full border px-2.5 py-1 text-xs ${!suffix() ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+        class={`rounded-full border px-2.5 py-1 ${!suffix() ? "border-primary bg-primary/10" : "border-border"}`}
       >
-        All
+        <Text class={`text-xs ${!suffix() ? "text-primary" : "text-muted-foreground"}`}>All</Text>
       </Button>
       <Each of={suffixCounts()}>
         {(chip) => (
           <Button
             testID={`suffix-${chip().token}`}
             onPress={() => suffix.set(chip().token)}
-            class={`rounded-full border px-2.5 py-1 text-xs ${suffix() === chip().token ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+            class={`rounded-full border px-2.5 py-1 ${suffix() === chip().token ? "border-primary bg-primary/10" : "border-border"}`}
           >
-            {`${chip().token} ${chip().count}`}
+            <Text class={`text-xs ${suffix() === chip().token ? "text-primary" : "text-muted-foreground"}`}>{`${chip().token} ${chip().count}`}</Text>
           </Button>
         )}
       </Each>
@@ -314,14 +436,14 @@ function Grid() {
             <Button
               testID={`tile-${row().meta.prefix}-${row().name}`}
               onPress={() => openIcon(row().meta, row().name)}
-              class={`items-center gap-1.5 rounded-lg border p-2 ${darkGrid() ? "border-slate-700 bg-slate-900" : "border-border bg-card"}`}
+              class={`items-center gap-1.5 rounded-lg border p-2 ${tileFrame()}`}
             >
               {row().icon ? (
                 <Icon icon={row().icon!} size={size()} color={row().icon!.multicolor ? undefined : previewColor()} label={row().name} />
               ) : (
                 <View style={{ height: size(), width: size() }} />
               )}
-              <Text class={`line-clamp-1 w-full text-center text-[10px] ${darkGrid() ? "text-slate-400" : "text-muted-foreground"}`}>{row().name}</Text>
+              <Text class={`line-clamp-1 w-full text-center text-[10px] ${tileLabel()}`}>{row().name}</Text>
             </Button>
           )}
         </List>
@@ -377,7 +499,7 @@ function Detail() {
         <Each of={activeList()}>
           {(current) => (
             <View class="gap-4">
-              <View class={`items-center rounded-xl border p-6 ${darkGrid() ? "border-slate-700 bg-slate-900" : "border-border bg-card"}`}>
+              <View class={`items-center rounded-xl border p-6 ${flipCanvas() ? tileFrame() : "border-border bg-card"}`}>
                 <Icon icon={current().icon} size={96} color={current().icon.multicolor ? undefined : previewColor()} label={current().icon.name} />
               </View>
               <View class="gap-1">
@@ -404,16 +526,27 @@ function Detail() {
                   </Each>
                 </View>
               </View>
+              {isWeb ? (
+                <Button
+                  testID="download-svg"
+                  onPress={() => download(`${current().icon.set}-${current().icon.name}.svg`, svgMarkup(current().icon), "image/svg+xml")}
+                  class="flex-row items-center justify-center rounded-lg bg-primary px-3 py-2 active:bg-primary/90"
+                >
+                  <Text class="text-sm font-medium text-primary-foreground">Download SVG</Text>
+                </Button>
+              ) : (
+                <View />
+              )}
               <View class="gap-1.5">
                 <Each of={copyActions(current().icon)}>
                   {(action) => (
                     <Button
                       testID={action().id}
                       onPress={() => copied(action().label, action().text())}
-                      class="flex-row items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
+                      class="flex-row items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2"
                     >
-                      <Text class="text-sm text-foreground">{`Copy ${action().label}`}</Text>
-                      <Text class="line-clamp-1 max-w-40 text-xs text-muted-foreground">{action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}</Text>
+                      <Text class="shrink-0 text-sm text-foreground">{`Copy ${action().label}`}</Text>
+                      <Text class="line-clamp-1 min-w-0 flex-1 text-right text-xs text-muted-foreground">{action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}</Text>
                     </Button>
                   )}
                 </Each>
@@ -434,6 +567,7 @@ function App() {
   });
   return (
     <View class="flex-1 flex-row bg-background">
+      {isWeb ? <WebView ref={(node) => (downloader = node)} html={DOWNLOADER} class="pointer-events-none absolute bottom-0 right-0 h-px w-px opacity-0" /> : <View />}
       {narrow() ? (
         <Sheet open={sidebarOpen()} side="left" onOpenChange={(event) => sidebarOpen.set(event.open)}>
           <Sidebar />
@@ -475,8 +609,10 @@ function App() {
         <Sheet open={active() !== null} side="right" onOpenChange={(event) => !event.open && active.set(null)}>
           <Detail />
         </Sheet>
-      ) : (
+      ) : active() ? (
         <Detail />
+      ) : (
+        <View />
       )}
       {toast() ? (
         <View class="absolute bottom-4 right-4 rounded-lg bg-primary px-3 py-2 shadow-lg">
