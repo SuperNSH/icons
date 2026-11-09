@@ -53,6 +53,7 @@ It runs on Node 24 or Bun.
 ```sh
 nsh-icons add <set:name>... [--out src/icons.ts] [--lang ts|rust]
 nsh-icons font <set:name>... --out assets/icons.ttf [--map src/icon-font.ts] [--family NshIcons] [--lang ts|rust]
+nsh-icons gallery [--out examples/gallery] [--sets lucide,ph] [--data-only]
 nsh-icons search <text> --set <prefix>
 nsh-icons sets
 ```
@@ -89,11 +90,13 @@ GitHub Actions does all compiling and testing:
 - Formatting, Clippy and tests on Linux, macOS and Windows.
 - Cross-checks for iOS, the iOS simulator, Android and wasm.
 - Compiles every bundled set's generated module.
-- Runs the CLI's tests under Bun and the TSX package's tests under `nsh test`.
-- Checks that the committed data is the pinned release's.
+- Runs the CLI's tests under Bun, and the TSX package's and the gallery's under `nsh test`.
+- Checks that the committed data is the pinned release's, and that the gallery's committed files match what the CLI writes.
 - On `master`, packages the gallery in `examples/gallery` for macOS, Linux and Windows on both x86_64 and arm64, plus the iOS simulator, Android and the web, into the `latest` release.
 - On `master`, deploys the gallery's web build to GitHub Pages at https://supernsh.github.io/nsh-icons/ (NSH's web build uses relative asset paths, so it serves from that subpath).
 
 A weekly workflow moves the pin to the newest `@iconify/json` and opens a pull request.
 
-The tests check the generated code, the element mounting with its label, and the TSX screen. CI does not compare rendered pixels, so to see the icons, open a gallery build from the release.
+## The gallery
+
+`examples/gallery` is an icon explorer over every bundled set, offline: search all 133,000 icon names at once, browse a set with variant chips (`ph`'s `-fill`, `-duotone`...), see an icon's sibling variants, and copy what an app pastes — the Iconify id, the SVG, the `nsh-icons add` command, a TSX snippet or the Rust constant. `nsh-icons gallery` writes its data: the set index it commits, and one module of bodies per set, loaded when a set is opened. CI does not compare rendered pixels, so to browse the icons, open a gallery build from the release.

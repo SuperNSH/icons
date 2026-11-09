@@ -43,6 +43,14 @@ The code is MIT. Each set keeps its own license, listed in `NOTICE.md` and `docs
 
 The private use area keeps glyphs from clashing with real characters. Sorting by id makes the same list give the same font and the same map. Adding an icon can move later code points, but the map is regenerated with the font, so code that uses the map's names is unaffected. `svg2ttf` gets a fixed timestamp so the bytes are stable, and CI rebuilds the gallery's font and fails if it differs.
 
+## The gallery is an explorer, over all bundled sets, offline
+
+`examples/gallery` shows what the library holds: every bundled set's icons, searchable, with variant chips, sibling variants, and the id, SVG, `add` command, TSX and Rust snippets an app pastes. All of it works offline, because the data ships inside the app.
+
+NSH bundles an asset only when the app imports it as an image or a font, and both get parsed, so the bodies cannot ride along as files. `nsh-icons gallery` writes them as code instead: `src/demo-index.ts`, committed, holds each set's metadata and every icon name (3.5 MB — the whole corpus searches instantly); `src/data/<prefix>.ts`, one module per set and gitignored (85 MB together), holds the bodies in the same order, loaded by a dynamic `import()` so the bundler splits them and a set loads only when opened. CI writes `src/data/` back before checking and packaging, the same way `fetch-data.ts` owns the crate's data.
+
+Variants are Iconify names with suffixes (`heart-fill`, `heart-duotone`), not a separate axis, so the demo derives its chips and its sibling grouping by stripping the suffixes sets actually use. `nsh.json` grants the `clipboard` capability for the copy actions; with the key present but empty, NSH would deny the clipboard.
+
 ## No local builds
 
-As in the other SuperNSH repositories, nothing compiles on a developer's machine. CI runs formatting, Clippy and tests on three operating systems, cross-checks iOS, Android and wasm, compiles every bundled set in four shards, runs the CLI's tests under Bun and the TSX package under `nsh test`, and on `master` packages the gallery for nine targets into the `latest` release.
+As in the other SuperNSH repositories, nothing compiles on a developer's machine. CI runs formatting, Clippy and tests on three operating systems, cross-checks iOS, Android and wasm, compiles every bundled set in four shards, runs the CLI's tests under Bun, the TSX package and the gallery under `nsh test`, and on `master` packages the gallery for nine targets into the `latest` release.

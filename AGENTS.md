@@ -8,6 +8,6 @@ Hard rules for humans and coding agents in this repo.
 - Docs read like a competent human wrote them: direct, concrete, no marketing filler.
 - Dead code is deleted. No speculative abstractions.
 - The Rust generator (`crates/nsh-icons-codegen`) and the TypeScript resolver (`packages/nsh-icons/src/iconify.ts`) give the same output. A change lands in both, held by `fixtures/`.
-- Generated files are never edited by hand: `crates/nsh-icons/data`, the crate's feature list, `docs/sets.md`, `NOTICE.md` come from `tools/fetch-data.ts`; `examples/gallery/src` and `assets` from the CLI.
+- Generated files are never edited by hand: `crates/nsh-icons/data`, the crate's feature list, `docs/sets.md`, `NOTICE.md` come from `tools/fetch-data.ts`; the gallery's committed files (`examples/gallery/src/demo-index.ts`, `src/icon-font.ts`, `assets/`) come from the CLI's `gallery` command, which also writes the gitignored `examples/gallery/src/data/` in CI.
 - Each icon set keeps its own license. A new bundled set needs a license that lets apps ship it.
 - The main branch is `master`.
