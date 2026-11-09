@@ -3,6 +3,8 @@
   "id": "dev.supernsh.icons.gallery",
   "version": "0.1.0",
   "build": 1,
-  "capabilities": {},
+  "capabilities": {
+    "clipboard": true
+  },
   "rust": "../../crates/nsh-icons"
 }
