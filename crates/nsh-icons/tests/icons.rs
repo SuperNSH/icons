@@ -6,8 +6,8 @@ use std::time::{Duration, SystemTime};
 
 use nsh_core::prelude::*;
 use nsh_engine::{Clock, EngineConfig, Root};
-use supernsh_icons::{Glyph, icon, logos, lookup, lucide};
 use nsh_testing::Headless;
+use supernsh_icons::{Glyph, icon, logos, lookup, lucide};
 
 #[test]
 fn a_constant_is_the_set_s_own_icon() {
