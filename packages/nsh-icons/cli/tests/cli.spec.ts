@@ -7,9 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { type IconifySet, resolveAll, rustName, tsName } from "../../src/iconify.ts";
+import { dataIndex, dataModule, demoIndex, demoSet } from "../gallery.ts";
 import { buildFont, fontProblem, glyphModule, iconModule, idsIn, parseId, pick, rustString } from "../generate.ts";
 import { main } from "../nsh-icons.ts";
-import { loadSet } from "../sources.ts";
+import { loadSet, type ManifestEntry } from "../sources.ts";
 
 const fixtures = join(import.meta.dir, "../../../../fixtures");
 
@@ -120,6 +121,57 @@ describe("sources", () => {
     await loadSet("made-up", fetcher);
     // The second load reads the version, then the cache, not the tarball.
     expect(asked.filter((u) => u.endsWith(".tgz"))).toHaveLength(1);
+  });
+});
+
+describe("the gallery", () => {
+  const entry: ManifestEntry = { prefix: "demo", name: "Demo Set", total: 0, license: "MIT", licenseUrl: "https://opensource.org/license/mit", author: "n", multicolor: false, category: "General", restrictive: false, bundled: true };
+  const set: IconifySet = {
+    prefix: "demo",
+    info: { name: "Demo Set", samples: ["star", "heart"] },
+    icons: { heart: { body: '<path d="M0 0h1v1z"/>' }, star: { body: '<circle cx="1" cy="1" r="1"/>' } },
+    aliases: { favourite: { parent: "heart" } },
+  };
+
+  test("indexes a set: names with aliases, samples, bodies in the same order", () => {
+    const resolved = resolveAll(set);
+    const demo = demoSet(entry, set, resolved.map((icon) => icon.name));
+    expect(demo.names).toEqual(["favourite", "heart", "star"]);
+    expect(demo.sampleIcons.map((icon) => icon.name)).toEqual(["star", "heart"]);
+    const index = demoIndex([demo], "9.9.9");
+    expect(index).toContain('export const VERSION = "9.9.9"');
+    expect(index).toContain('license: "MIT",');
+    expect(index).toContain('"favourite",');
+    const module = dataModule("demo", "Demo Set", "MIT", "9.9.9", resolved.map((icon) => [icon.body, icon.viewBox]));
+    expect(module).toContain('export const BODIES: Array<[body: string, viewBox: [number, number, number, number]]> = [');
+    expect(module).toContain('<path d="M0 0h1v1z"/>');
+    expect(module).toContain('<circle cx="1" cy="1" r="1"/>');
+    expect(dataIndex(["demo"])).toContain('"demo": () => import("./demo"),');
+  });
+
+  test("a set without samples shows its first icons", () => {
+    const plain: IconifySet = { prefix: "demo", icons: set.icons };
+    const demo = demoSet(entry, plain, resolveAll(plain).map((icon) => icon.name));
+    expect(demo.sampleIcons.map((icon) => icon.name)).toEqual(["heart", "star"]);
+  });
+
+  test("writes the demo's files from the bundled data, the same bytes twice", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nsh-icons-"));
+    expect(await main(["gallery", "--out", dir, "--sets", "lucide"])).toBe(0);
+    const index = await readFile(join(dir, "src/demo-index.ts"), "utf8");
+    expect(index).toContain('prefix: "lucide"');
+    expect(await readFile(join(dir, "src/data/lucide.ts"), "utf8")).toContain("export const BODIES:");
+    expect(await readFile(join(dir, "src/data/index.ts"), "utf8")).toContain('"lucide": () => import("./lucide"),');
+    expect(await readFile(join(dir, "src/icon-font.ts"), "utf8")).toContain("export const phHeartFill: GlyphData");
+    const again = await mkdtemp(join(tmpdir(), "nsh-icons-"));
+    await main(["gallery", "--out", again, "--sets", "lucide"]);
+    for (const file of ["src/demo-index.ts", "src/data/index.ts", "src/data/lucide.ts", "src/icon-font.ts"]) {
+      expect(await readFile(join(again, file), "utf8")).toBe(await readFile(join(dir, file), "utf8"));
+    }
+  });
+
+  test("refuses a set the crate does not bundle", async () => {
+    await expect(main(["gallery", "--sets", "made-up"])).rejects.toThrow("the crate does not bundle made-up");
   });
 });
 

@@ -6,8 +6,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { resolveAll } from "../src/iconify.ts";
+import { DEMO_FONT_IDS, dataModule, dataIndex, demoIndex, demoSet, type DemoSet } from "./gallery.ts";
 import { buildFont, glyphModule, iconModule, idsIn, type Lang, parseId, type Picked, pick } from "./generate.ts";
-import { listSets, loadSet } from "./sources.ts";
+import { bundledManifest, listSets, loadSet } from "./sources.ts";
 
 const USAGE = `nsh-icons: icons from every Iconify set, for NSH apps
 
@@ -16,6 +17,9 @@ const USAGE = `nsh-icons: icons from every Iconify set, for NSH apps
   nsh-icons font <set:name>... --out assets/icons.ttf [--map src/icon-font.ts]
                  [--family NshIcons] [--lang ts|rust]
       Builds an icon font of filled, one-color icons and its glyph map.
+  nsh-icons gallery [--out examples/gallery] [--sets lucide,ph] [--data-only]
+      Writes the icon explorer demo's data: the set index it commits, each
+      set's bodies as their own module, and the demo's font showcase.
   nsh-icons search <text> --set <prefix>
       Lists the icons of a set whose names contain the text.
   nsh-icons sets
@@ -59,6 +63,8 @@ export async function main(argv: string[]): Promise<number> {
       lang: { type: "string", default: "ts" },
       family: { type: "string", default: "NshIcons" },
       set: { type: "string" },
+      sets: { type: "string" },
+      "data-only": { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -91,6 +97,40 @@ export async function main(argv: string[]): Promise<number> {
       await write(out, await buildFont(icons, values.family!));
       await write(map, glyphModule(icons, values.family!, importPath(map, out), lang));
       console.log(`${relative(process.cwd(), out)} and ${relative(process.cwd(), map)}: ${icons.length} glyphs`);
+      return 0;
+    }
+    case "gallery": {
+      const out = resolve(values.out ?? ".");
+      const { version, entries } = await bundledManifest();
+      const bundled = entries.filter((e) => e.bundled).sort((a, b) => (a.prefix < b.prefix ? -1 : 1));
+      const wanted = values.sets ? values.sets.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
+      if (wanted) {
+        const known = new Set(bundled.map((e) => e.prefix));
+        const missing = wanted.filter((prefix) => !known.has(prefix));
+        if (missing.length) throw new Error(`the crate does not bundle ${missing.join(", ")}`);
+      }
+      const demo: DemoSet[] = [];
+      for (const entry of wanted ? bundled.filter((e) => wanted.includes(e.prefix)) : bundled) {
+        const { set } = await loadSet(entry.prefix);
+        const resolved = resolveAll(set);
+        demo.push(demoSet(entry, set, resolved.map((icon) => icon.name)));
+        await write(
+          resolve(out, "src/data", `${entry.prefix}.ts`),
+          dataModule(entry.prefix, entry.name, entry.license, version, resolved.map((icon) => [icon.body, icon.viewBox] as [string, [number, number, number, number]])),
+        );
+      }
+      await write(resolve(out, "src/data/index.ts"), dataIndex(demo.map((set) => set.entry.prefix)));
+      await write(resolve(out, "src/demo-index.ts"), demoIndex(demo, version));
+      // The demo builds run this with --data-only: the font artifacts are
+      // committed, and data alone needs no font libraries installed.
+      if (values["data-only"]) return 0;
+      const fontOut = resolve(out, "assets/icons.ttf");
+      const map = resolve(out, "src/icon-font.ts");
+      const icons = await pickAll(DEMO_FONT_IDS);
+      await write(fontOut, await buildFont(icons, values.family!));
+      // The demo is a TSX app, so its glyph map is always TS.
+      await write(map, glyphModule(icons, values.family!, importPath(map, fontOut), "ts"));
+      console.log(`${relative(process.cwd(), out)}: ${demo.length} sets, ${demo.reduce((total, set) => total + set.names.length, 0)} icons, ${icons.length} glyphs`);
       return 0;
     }
     case "search": {

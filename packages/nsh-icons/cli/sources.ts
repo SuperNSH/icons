@@ -18,6 +18,28 @@ export interface Loaded {
   source: string;
 }
 
+/** One entry of the bundled `manifest.json`, as `tools/fetch-data.ts` writes it. */
+export interface ManifestEntry {
+  prefix: string;
+  name: string;
+  total: number;
+  license: string;
+  licenseUrl: string;
+  author: string;
+  multicolor: boolean;
+  category: string;
+  /** The license asks for attribution, or limits commercial use. */
+  restrictive: boolean;
+  bundled: boolean;
+}
+
+/** The pinned `@iconify/json` version and its manifest; nothing outside a checkout. */
+export async function bundledManifest(): Promise<{ version: string; entries: ManifestEntry[] }> {
+  const version = (await readFile(join(bundledDir, "VERSION"), "utf8")).trim();
+  const entries: ManifestEntry[] = JSON.parse(await readFile(join(bundledDir, "manifest.json"), "utf8"));
+  return { version, entries };
+}
+
 export interface Fetcher {
   (url: string): Promise<Uint8Array>;
 }
@@ -53,11 +75,22 @@ export async function loadSet(prefix: string, fetcher: Fetcher = fetchBytes): Pr
 }
 
 /** Every Iconify set: the bundled manifest, else Iconify's own list. */
-export async function listSets(fetcher: Fetcher = fetchBytes): Promise<Array<{ prefix: string; name: string; total: number; license: string; bundled: boolean }>> {
+export async function listSets(fetcher: Fetcher = fetchBytes): Promise<ManifestEntry[]> {
   const manifest = join(bundledDir, "manifest.json");
   if (existsSync(manifest)) return JSON.parse(await readFile(manifest, "utf8"));
   const collections = JSON.parse(new TextDecoder().decode(await fetcher("https://raw.githubusercontent.com/iconify/icon-sets/master/collections.json")));
   return Object.entries(collections as Record<string, { name: string; total?: number; license?: { spdx?: string; title?: string }; hidden?: boolean }>)
     .filter(([, c]) => !c.hidden)
-    .map(([prefix, c]) => ({ prefix, name: c.name, total: c.total ?? 0, license: c.license?.spdx ?? c.license?.title ?? "unknown", bundled: false }));
+    .map(([prefix, c]) => ({
+      prefix,
+      name: c.name,
+      total: c.total ?? 0,
+      license: c.license?.spdx ?? c.license?.title ?? "unknown",
+      licenseUrl: "",
+      author: "",
+      multicolor: false,
+      category: "",
+      restrictive: false,
+      bundled: false,
+    }));
 }

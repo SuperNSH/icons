@@ -1,8 +1,6 @@
 // What the CLI writes: icon modules (TS or Rust) and icon fonts with their
 // glyph maps. Pure functions over resolved icons, so tests need no network.
 import { Readable } from "node:stream";
-import svg2ttf from "svg2ttf";
-import { SVGIcons2SVGFontStream } from "svgicons2svgfont";
 import { type IconifySet, resolveName, rustName, tsName } from "../src/iconify.ts";
 import { svgMarkup } from "../src/markup.ts";
 
@@ -117,6 +115,9 @@ export async function buildFont(icons: Picked[], family: string): Promise<Uint8A
     return problem ? [`${i.id} ${problem}`] : [];
   });
   if (problems.length) throw new Error(`${problems.join("\n")}\nUse the SVG form for these (nsh-icons add).`);
+  // Loaded here so commands that write no font run without the font libraries.
+  const { default: svg2ttf } = await import("svg2ttf");
+  const { SVGIcons2SVGFontStream } = await import("svgicons2svgfont");
   const svgFont = await new Promise<string>((done, fail) => {
     // The stream emits strings or buffers depending on its mode.
     const chunks: string[] = [];

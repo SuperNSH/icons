@@ -27,7 +27,7 @@ interface Layer {
 
 export interface IconifySet {
   prefix: string;
-  info?: { name?: string; author?: { name?: string }; license?: { title?: string; spdx?: string }; palette?: boolean };
+  info?: { name?: string; author?: { name?: string }; license?: { title?: string; spdx?: string }; palette?: boolean; samples?: string[] };
   icons: Record<string, Layer>;
   aliases?: Record<string, Layer>;
   left?: number;
