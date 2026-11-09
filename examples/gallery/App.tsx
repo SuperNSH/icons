@@ -1,11 +1,12 @@
 // The icon explorer: every bundled set's icons, searchable, with variant
 // filters, sibling variants, and the snippets an app pastes. The data is
-// `nsh-icons gallery`'s: src/demo-index.ts for names, src/data/ for bodies.
+// `supernsh-icons gallery`'s: src/demo-index.ts for names, src/data/ for bodies.
 import {
   Clipboard,
   colorScheme,
   computed,
   effect,
+  Image,
   keymap,
   List,
   mount,
@@ -18,8 +19,9 @@ import {
   windowSize,
   type InputRef,
   type WebViewRef,
+  type JSX,
 } from "nsh";
-import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Popover, Sheet, Slider } from "nsh/base";
+import { Button, Collapsible, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Popover, Sheet, Slider, Tab } from "nsh/base";
 import { Glyph, Icon, svgMarkup, type IconData } from "supernsh-icons";
 import { rustName, tsName } from "supernsh-icons/iconify";
 import { SETS, VERSION, type DemoSet } from "./src/demo-index";
@@ -45,6 +47,39 @@ const flipCanvas = signal(false);
 const sidebarOpen = signal(false);
 const toast = signal("");
 const loadedTick = signal(0);
+
+/** The export studio composes every download on one square canvas. */
+const CANVAS = 512;
+const PADDING_MAX = 192;
+const SHAPE_MAX = CANVAS / 2;
+const PNG_SIZES = [256, 512, 1024];
+
+type GradDir = "r" | "br" | "b" | "tr";
+type Shape = "square" | "rounded" | "circle";
+type BgMode = "none" | "solid" | "gradient";
+
+/** Gradient direction as userSpaceOnUse coordinates across the canvas. */
+const GRADIENT_DIRS: Record<GradDir, [number, number, number, number]> = {
+  r: [0, SHAPE_MAX, CANVAS, SHAPE_MAX],
+  br: [0, 0, CANVAS, CANVAS],
+  b: [SHAPE_MAX, 0, SHAPE_MAX, CANVAS],
+  tr: [0, CANVAS, CANVAS, 0],
+};
+const GRADIENT_LABELS: Record<GradDir, string> = { r: "→", br: "↘", b: "↓", tr: "↗" };
+
+const pad = signal(0);
+const shape = signal<Shape>("square");
+const cornerRadius = signal(SHAPE_MAX / 2);
+const bgMode = signal<BgMode>("none");
+const bgColor = signal("#4f46e5");
+const bgFrom = signal("#4f46e5");
+const bgTo = signal("#ec4899");
+const fillGradient = signal(false);
+const fgFrom = signal("#f59e0b");
+const fgTo = signal("#ec4899");
+const gradDir = signal<GradDir>("br");
+const pngSize = signal(512);
+const advanced = signal(false);
 
 /** The app runs in a browser: the only target where a file can be saved. */
 const isWeb = platform.os === "web";
@@ -153,20 +188,41 @@ let searchRef: InputRef | null = null;
 let downloader: WebViewRef | null = null;
 
 /** The page real downloads run in: TSX reaches no DOM, so the `<a download>`
- * a file save needs lives in a web view, whose sandbox allows downloads. */
+ * a file save needs — and the canvas a PNG rasterizes on — live in a web
+ * view, whose sandbox allows downloads and keeps scripts off the app. */
 const DOWNLOADER = `<!doctype html><html><head><meta charset="utf-8"></head><body><script>
-addEventListener("message", (event) => {
-  let job = null;
-  try { job = JSON.parse(String(event.data)); } catch { return; }
-  if (!job || job.kind !== "download") return;
-  const url = URL.createObjectURL(new Blob([job.text], { type: job.mime }));
+function save(blob, name) {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = job.name;
+  anchor.download = name;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+addEventListener("message", (event) => {
+  let job = null;
+  try { job = JSON.parse(String(event.data)); } catch { return; }
+  if (!job || job.kind !== "download") return;
+  if (!job.width) {
+    save(new Blob([job.text], { type: job.mime }), job.name);
+    return;
+  }
+  const source = URL.createObjectURL(new Blob([job.text], { type: "image/svg+xml" }));
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = job.width;
+    canvas.height = job.height;
+    canvas.getContext("2d").drawImage(image, 0, 0, job.width, job.height);
+    URL.revokeObjectURL(source);
+    canvas.toBlob((blob) => {
+      if (blob) save(blob, job.name);
+    }, "image/png");
+  };
+  image.onerror = () => URL.revokeObjectURL(source);
+  image.src = source;
 });
 </script></body></html>`;
 
@@ -175,8 +231,9 @@ function announce(text: string) {
   setTimeout(() => toast.set(""), 1800);
 }
 
-function download(name: string, text: string, mime: string) {
-  downloader?.postMessage(JSON.stringify({ kind: "download", name, text, mime }));
+/** Hands the composed file to the downloader page; `raster` turns it into a PNG of that pixel size. */
+function download(name: string, text: string, mime: string, raster?: number) {
+  downloader?.postMessage(JSON.stringify({ kind: "download", name, text, mime, width: raster ?? 0, height: raster ?? 0 }));
   announce(`Saving ${name}`);
 }
 
@@ -219,6 +276,75 @@ function copyActions(icon: IconData): Array<{ id: string; label: string; text: (
       text: () => `// Cargo.toml: supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["${icon.set}"] }\nuse supernsh_icons::{icon, ${module}};\n\nicon(${module}::${constant}).size(px(${size()}.0))`,
     },
   ];
+}
+
+/** The studio's settings as one value, read fresh on every recompose. */
+function studioOpts(): {
+  pad: number;
+  radius: number;
+  bg: BgMode;
+  bgColor: string;
+  bgFrom: string;
+  bgTo: string;
+  fillGradient: boolean;
+  fgFrom: string;
+  fgTo: string;
+  dir: GradDir;
+  tint: string;
+} {
+  return {
+    pad: pad(),
+    radius: shape() === "circle" ? SHAPE_MAX : shape() === "rounded" ? cornerRadius() : 0,
+    bg: bgMode(),
+    bgColor: bgColor(),
+    bgFrom: bgFrom(),
+    bgTo: bgTo(),
+    fillGradient: fillGradient(),
+    fgFrom: fgFrom(),
+    fgTo: fgTo(),
+    dir: gradDir(),
+    tint: previewColor(),
+  };
+}
+
+function rounded(n: number): string {
+  return String(Math.round(n * 1000) / 1000);
+}
+
+/** The composed export document: the icon centered on the padded, shaped,
+ * colored canvas. One function writes both the preview and the download, so
+ * what you see is byte for byte what you get. */
+function studioMarkup(icon: IconData, s: ReturnType<typeof studioOpts>): string {
+  const box = CANVAS - 2 * s.pad;
+  const [vx, vy, vw, vh] = icon.viewBox;
+  const scale = Math.min(box / vw, box / vh);
+  const tx = s.pad + (box - vw * scale) / 2 - vx * scale;
+  const ty = s.pad + (box - vh * scale) / 2 - vy * scale;
+  const [gx1, gy1, gx2, gy2] = GRADIENT_DIRS[s.dir];
+  const gradient = (id: string, from: string, to: string) =>
+    `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${gx1}" y1="${gy1}" x2="${gx2}" y2="${gy2}"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient>`;
+  let defs = "";
+  if (s.bg === "gradient") defs += gradient("studio-bg", s.bgFrom, s.bgTo);
+  if (s.radius > 0) defs += `<clipPath id="studio-clip"><rect width="${CANVAS}" height="${CANVAS}" rx="${s.radius}"/></clipPath>`;
+  const place = `transform="translate(${rounded(tx)} ${rounded(ty)}) scale(${rounded(scale)})"`;
+  let iconPart: string;
+  if (icon.multicolor || !s.fillGradient) {
+    // The tint rides on fill and color: a body may use either, or its own fills.
+    const tint = icon.multicolor ? "" : ` fill="${s.tint}" color="${s.tint}"`;
+    iconPart = `<g ${place}${tint}>${icon.body}</g>`;
+  } else {
+    defs += gradient("studio-fill", s.fgFrom, s.fgTo);
+    const mask = `<mask id="studio-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="${CANVAS}" height="${CANVAS}"><g ${place} fill="#fff" color="#fff">${icon.body}</g></mask>`;
+    iconPart = `${mask}<rect x="${s.pad}" y="${s.pad}" width="${box}" height="${box}" fill="url(#studio-fill)" mask="url(#studio-mask)"/>`;
+  }
+  const bgRect = s.bg === "none" ? "" : `<rect width="${CANVAS}" height="${CANVAS}" rx="${s.radius}" fill="${s.bg === "solid" ? s.bgColor : "url(#studio-bg)"}"/>`;
+  const clip = s.radius > 0 ? ` clip-path="url(#studio-clip)"` : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS} ${CANVAS}" width="${CANVAS}" height="${CANVAS}"><defs>${defs}</defs><g${clip}>${bgRect}${iconPart}</g></svg>`;
+}
+
+/** A whole SVG document as a data URI, for the studio's preview. */
+function documentUri(svg: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function Sidebar() {
@@ -269,7 +395,7 @@ function Sidebar() {
           <Glyph glyph={phStarFill} size={22} color="#4f46e5" label="Star glyph" />
           <Glyph glyph={phGearFill} size={22} color="#4f46e5" label="Gear glyph" />
         </View>
-        <Text class="line-clamp-2 text-xs text-muted-foreground">nsh-icons font builds the .ttf; importing its map registers it.</Text>
+        <Text class="line-clamp-2 text-xs text-muted-foreground">supernsh-icons font builds the .ttf; importing its map registers it.</Text>
       </View>
     </View>
   );
@@ -492,67 +618,302 @@ function GlobalHits() {
   );
 }
 
+function StudioRow(props: { label: string; children: JSX.Element }) {
+  return (
+    <View class="gap-1.5">
+      <Text class="text-xs font-medium text-muted-foreground">{props.label}</Text>
+      {props.children}
+    </View>
+  );
+}
+
+function Segmented(props: { testID: string; label: string; value: string; onChange: (id: string) => void; options: Array<{ id: string; label: string }> }) {
+  return (
+    <View class="flex-row gap-1 rounded-lg border border-border bg-card p-1" accessibilityLabel={props.label}>
+      <Each of={props.options}>
+        {(option) => (
+          <Tab
+            testID={`${props.testID}-${option().id}`}
+            selected={props.value === option().id}
+            onPress={() => props.onChange(option().id)}
+            class="flex-1 items-center rounded-md px-1.5 py-1 selected:bg-primary/10"
+          >
+            <Text class={`text-xs ${props.value === option().id ? "text-primary" : "text-muted-foreground"}`}>{option().label}</Text>
+          </Tab>
+        )}
+      </Each>
+    </View>
+  );
+}
+
+/** One gradient stop: a swatch that opens the picker, bound to one signal. */
+function ColorStop(props: { testID: string; label: string; color: string; onPick: (hex: string) => void }) {
+  return (
+    <Popover
+      trigger={
+        <Button testID={props.testID} accessibilityLabel={props.label} class="size-7 items-center justify-center rounded-full border border-border">
+          <View class="size-5 rounded-full" style={{ backgroundColor: props.color }} />
+        </Button>
+      }
+      popupClass="w-56 rounded-lg border border-border bg-popover p-3 shadow-lg"
+    >
+      <ColorPicker value={props.color} format="hex" onChange={(event) => props.onPick(event.formatted)} class="gap-3">
+        <ColorArea accessibilityLabel="Shade" class="h-28" panelClass="rounded-md" fillThumb />
+        <ColorSlider
+          colorSpace="hsb"
+          channel="hue"
+          accessibilityLabel="Hue"
+          class="h-6 justify-center"
+          trackClass="h-4 rounded-full"
+          thumbClass="size-4 rounded-full border-2 border-background"
+          fillThumb
+        />
+        <View class="flex-row items-center gap-2">
+          <ColorSwatch class="size-7 shrink-0 rounded-md border border-border" />
+          <ColorField accessibilityLabel="Color as hex" class="h-7 flex-1 rounded-md border border-input bg-background px-2 font-mono text-xs text-foreground" />
+        </View>
+      </ColorPicker>
+    </Popover>
+  );
+}
+
+function DirectionRow() {
+  return (
+    <View class="flex-row items-center gap-2">
+      <Text class="text-xs text-muted-foreground">Direction</Text>
+      <View class="flex-row gap-1">
+        <Each of={Object.keys(GRADIENT_DIRS) as GradDir[]}>
+          {(dir) => (
+            <Tab
+              testID={`grad-dir-${dir()}`}
+              selected={gradDir() === dir()}
+              onPress={() => gradDir.set(dir())}
+              class="size-8 items-center justify-center rounded-md selected:bg-primary/10"
+            >
+              <Text class={`text-sm ${gradDir() === dir() ? "text-primary" : "text-muted-foreground"}`}>{GRADIENT_LABELS[dir()]}</Text>
+            </Tab>
+          )}
+        </Each>
+      </View>
+    </View>
+  );
+}
+
+function StudioAdvanced(icon: IconData) {
+  return (
+    <Collapsible
+      open={advanced()}
+      reveal
+      content={
+        <View class="gap-4 pt-3">
+          <StudioRow label="Padding">
+            <Slider
+              testID="studio-pad"
+              value={pad()}
+              min={0}
+              max={PADDING_MAX}
+              step={4}
+              accessibilityLabel="Padding around the icon"
+              onChange={(event) => pad.set(event.value as number)}
+              class="w-full"
+              trackClass="h-6 justify-center"
+              indicatorClass="h-1.5 rounded-full bg-muted"
+              rangeClass="rounded-full bg-primary"
+              thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
+            >
+              <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${pad()}`}</Text>
+            </Slider>
+          </StudioRow>
+          <StudioRow label="Shape">
+            <Segmented
+              testID="studio-shape"
+              label="Icon shape"
+              value={shape()}
+              onChange={(id) => shape.set(id as Shape)}
+              options={[
+                { id: "square", label: "Square" },
+                { id: "rounded", label: "Rounded" },
+                { id: "circle", label: "Circle" },
+              ]}
+            />
+            {shape() === "rounded" ? (
+              <Slider
+                testID="studio-radius"
+                value={cornerRadius()}
+                min={0}
+                max={SHAPE_MAX}
+                step={8}
+                accessibilityLabel="Corner radius"
+                onChange={(event) => cornerRadius.set(event.value as number)}
+                class="w-full"
+                trackClass="h-6 justify-center"
+                indicatorClass="h-1.5 rounded-full bg-muted"
+                rangeClass="rounded-full bg-primary"
+                thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
+              >
+                <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${Math.round((cornerRadius() / SHAPE_MAX) * 100)}%`}</Text>
+              </Slider>
+            ) : (
+              <View />
+            )}
+          </StudioRow>
+          <StudioRow label="Background">
+            <Segmented
+              testID="studio-bg"
+              label="Background"
+              value={bgMode()}
+              onChange={(id) => bgMode.set(id as BgMode)}
+              options={[
+                { id: "none", label: "None" },
+                { id: "solid", label: "Solid" },
+                { id: "gradient", label: "Gradient" },
+              ]}
+            />
+            {bgMode() === "solid" ? (
+              <View class="flex-row items-center gap-2">
+                <ColorStop testID="studio-bg-color" label="Background color" color={bgColor()} onPick={(hex) => bgColor.set(hex)} />
+                <Text class="font-mono text-xs text-muted-foreground">{bgColor()}</Text>
+              </View>
+            ) : bgMode() === "gradient" ? (
+              <View class="flex-row items-center gap-2">
+                <ColorStop testID="studio-bg-from" label="Gradient start" color={bgFrom()} onPick={(hex) => bgFrom.set(hex)} />
+                <ColorStop testID="studio-bg-to" label="Gradient end" color={bgTo()} onPick={(hex) => bgTo.set(hex)} />
+              </View>
+            ) : (
+              <View />
+            )}
+          </StudioRow>
+          <StudioRow label="Icon fill">
+            <Segmented
+              testID="studio-fill"
+              label="Icon fill"
+              value={icon.multicolor || !fillGradient() ? "tint" : "gradient"}
+              onChange={(id) => fillGradient.set(id === "gradient")}
+              options={icon.multicolor ? [{ id: "tint", label: "Own colors" }] : [{ id: "tint", label: "Tint" }, { id: "gradient", label: "Gradient" }]}
+            />
+            {fillGradient() && !icon.multicolor ? (
+              <View class="flex-row items-center gap-2">
+                <ColorStop testID="studio-fg-from" label="Fill gradient start" color={fgFrom()} onPick={(hex) => fgFrom.set(hex)} />
+                <ColorStop testID="studio-fg-to" label="Fill gradient end" color={fgTo()} onPick={(hex) => fgTo.set(hex)} />
+              </View>
+            ) : (
+              <View />
+            )}
+          </StudioRow>
+          {bgMode() === "gradient" || (fillGradient() && !icon.multicolor) ? (
+            <DirectionRow />
+          ) : (
+            <View />
+          )}
+          <StudioRow label="PNG size">
+            <Segmented
+              testID="studio-png"
+              label="PNG pixel size"
+              value={String(pngSize())}
+              onChange={(id) => pngSize.set(Number(id))}
+              options={PNG_SIZES.map((pixels) => ({ id: String(pixels), label: String(pixels) }))}
+            />
+          </StudioRow>
+        </View>
+      }
+    >
+      <View
+        testID="studio-advanced"
+        role="button"
+        accessibilityLabel="Advanced export options"
+        accessibilityState={{ expanded: advanced() }}
+        onPress={() => advanced.update((open) => !open)}
+        class="flex-row items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
+      >
+        <Text class="text-sm font-medium text-foreground">Advanced</Text>
+        <Text class="text-xs text-muted-foreground">{advanced() ? "Hide" : "Padding, shape, colors"}</Text>
+      </View>
+    </Collapsible>
+  );
+}
+
 function Detail() {
   return (
     <Scroll testID="detail" class="w-80 shrink-0 border-l border-border">
       <View class="gap-4 p-4">
         <Each of={activeList()}>
-          {(current) => (
-            <View class="gap-4">
-              <View class={`items-center rounded-xl border p-6 ${flipCanvas() ? tileFrame() : "border-border bg-card"}`}>
-                <Icon icon={current().icon} size={96} color={current().icon.multicolor ? undefined : previewColor()} label={current().icon.name} />
-              </View>
-              <View class="gap-1">
-                <Text testID="detail-id" class="font-mono text-sm font-medium text-foreground">{`${current().icon.set}:${current().icon.name}`}</Text>
-                <Text class="line-clamp-1 text-xs text-muted-foreground">{`${current().meta.name} · ${current().meta.license}${current().meta.restrictive ? " (asks attribution or limits use)" : ""}`}</Text>
-                <Text class="text-xs text-muted-foreground">{`${current().icon.viewBox[2]} × ${current().icon.viewBox[3]}${current().icon.multicolor ? " · multicolor" : ""}`}</Text>
-              </View>
-              <View class="gap-2">
-                <Text class="text-xs font-medium text-muted-foreground">Variants</Text>
-                <View class="flex-row flex-wrap gap-2">
-                  <Each of={siblings()}>
-                    {(sibling) => (
+          {(current) => {
+            const icon = current().icon;
+            const base = `${icon.set}-${icon.name}`;
+            return (
+              <View class="gap-4">
+                <View class="items-center py-2">
+                  <Image
+                    testID="studio-preview"
+                    src={documentUri(studioMarkup(icon, studioOpts()))}
+                    style={{ width: 192, height: 192 }}
+                    accessibilityLabel="Export preview"
+                  />
+                </View>
+                <View class="gap-1">
+                  <Text testID="detail-id" class="font-mono text-sm font-medium text-foreground">{`${icon.set}:${icon.name}`}</Text>
+                  <Text class="line-clamp-1 text-xs text-muted-foreground">{`${current().meta.name} · ${current().meta.license}${current().meta.restrictive ? " (asks attribution or limits use)" : ""}`}</Text>
+                  <Text class="text-xs text-muted-foreground">{`${icon.viewBox[2]} × ${icon.viewBox[3]} glyph on a ${CANVAS} × ${CANVAS} export${icon.multicolor ? " · multicolor" : ""}`}</Text>
+                </View>
+                <View class="gap-2">
+                  <Text class="text-xs font-medium text-muted-foreground">Variants</Text>
+                  <View class="flex-row flex-wrap gap-2">
+                    <Each of={siblings()}>
+                      {(sibling) => (
+                        <Button
+                          testID={`sibling-${sibling().name}`}
+                          onPress={() => openIcon(current().meta, sibling().name)}
+                          class="items-center gap-1 rounded-lg border border-border bg-card p-1.5"
+                        >
+                          <Icon icon={sibling()} size={20} color={sibling().multicolor ? undefined : previewColor()} />
+                          <Text class="line-clamp-1 w-16 text-center text-[10px] text-muted-foreground">
+                            {sibling().name.slice(baseName(current().icon.name).length).replace(/^-/, "") || "base"}
+                          </Text>
+                        </Button>
+                      )}
+                    </Each>
+                  </View>
+                </View>
+                {isWeb ? (
+                  <View class="flex-row gap-2">
+                    <Button
+                      testID="download-svg"
+                      accessibilityLabel="Download SVG"
+                      onPress={() => download(`${base}.svg`, studioMarkup(icon, studioOpts()), "image/svg+xml")}
+                      class="flex-1 items-center rounded-lg border border-border bg-card px-3 py-2 active:bg-muted"
+                    >
+                      <Text class="text-sm font-medium text-foreground">SVG</Text>
+                    </Button>
+                    <Button
+                      testID="download-png"
+                      accessibilityLabel="Download PNG"
+                      onPress={() => download(`${base}-${pngSize()}.png`, studioMarkup(icon, studioOpts()), "image/png", pngSize())}
+                      class="flex-1 items-center rounded-lg bg-primary px-3 py-2 active:bg-primary/90"
+                    >
+                      <Text class="text-sm font-medium text-primary-foreground">PNG</Text>
+                    </Button>
+                  </View>
+                ) : (
+                  <View />
+                )}
+                {StudioAdvanced(icon)}
+                <View class="gap-1.5">
+                  <Each of={copyActions(icon)}>
+                    {(action) => (
                       <Button
-                        testID={`sibling-${sibling().name}`}
-                        onPress={() => openIcon(current().meta, sibling().name)}
-                        class="items-center gap-1 rounded-lg border border-border bg-card p-1.5"
+                        testID={action().id}
+                        onPress={() => copied(action().label, action().text())}
+                        class="flex-row items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2"
                       >
-                        <Icon icon={sibling()} size={20} color={sibling().multicolor ? undefined : previewColor()} />
-                        <Text class="line-clamp-1 w-16 text-center text-[10px] text-muted-foreground">
-                          {sibling().name.slice(baseName(current().icon.name).length).replace(/^-/, "") || "base"}
-                        </Text>
+                        <Text class="shrink-0 text-sm text-foreground">{`Copy ${action().label}`}</Text>
+                        <Text class="line-clamp-1 min-w-0 flex-1 text-right text-xs text-muted-foreground">{action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}</Text>
                       </Button>
                     )}
                   </Each>
                 </View>
               </View>
-              {isWeb ? (
-                <Button
-                  testID="download-svg"
-                  onPress={() => download(`${current().icon.set}-${current().icon.name}.svg`, svgMarkup(current().icon), "image/svg+xml")}
-                  class="flex-row items-center justify-center rounded-lg bg-primary px-3 py-2 active:bg-primary/90"
-                >
-                  <Text class="text-sm font-medium text-primary-foreground">Download SVG</Text>
-                </Button>
-              ) : (
-                <View />
-              )}
-              <View class="gap-1.5">
-                <Each of={copyActions(current().icon)}>
-                  {(action) => (
-                    <Button
-                      testID={action().id}
-                      onPress={() => copied(action().label, action().text())}
-                      class="flex-row items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2"
-                    >
-                      <Text class="shrink-0 text-sm text-foreground">{`Copy ${action().label}`}</Text>
-                      <Text class="line-clamp-1 min-w-0 flex-1 text-right text-xs text-muted-foreground">{action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}</Text>
-                    </Button>
-                  )}
-                </Each>
-              </View>
-            </View>
-          )}
+            );
+          }}
         </Each>
       </View>
     </Scroll>
