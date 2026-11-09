@@ -336,7 +336,7 @@ function Home() {
       {(count) => (
         <List testID="home" each={SETS} numColumns={Math.max(2, count() - 2)} estimatedItemSize={130} contentClass="gap-2 p-2" class="flex-1">
           {(meta) => (
-            <Button testID={`set-${meta().prefix}`} onPress={() => openSet(meta())} class="gap-2 rounded-lg border border-border bg-card p-3">
+            <Button testID={`card-${meta().prefix}`} onPress={() => openSet(meta())} class="gap-2 rounded-lg border border-border bg-card p-3">
               <View class="flex-row gap-2">
                 <Each of={meta().samples}>
                   {(sample) => <Icon icon={sample()} size={22} color={meta().multicolor ? undefined : previewColor()} />}
