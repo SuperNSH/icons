@@ -141,11 +141,14 @@ describe("the gallery", () => {
     const index = demoIndex([demo], "9.9.9");
     expect(index).toContain('export const VERSION = "9.9.9"');
     expect(index).toContain('license: "MIT",');
-    expect(index).toContain('"favourite",');
+    // The names ride inside a JSON string, so their quotes are escaped.
+    expect(index).toContain('\\"favourite\\",');
     const module = dataModule("demo", "Demo Set", "MIT", "9.9.9", resolved.map((icon) => [icon.body, icon.viewBox]));
-    expect(module).toContain('export const BODIES: Array<[body: string, viewBox: [number, number, number, number]]> = [');
-    expect(module).toContain('<path d=\\"M0 0h1v1z\\"/>');
-    expect(module).toContain('<circle cx=\\"1\\" cy=\\"1\\" r=\\"1\\"/>');
+    expect(module).toContain("export const BODIES: Array<[body: string, viewBox: [number, number, number, number]]> = JSON.parse(");
+    // The bodies ride inside a JSON string inside a string literal, so a
+    // quote in a body arrives as backslash backslash backslash quote.
+    expect(module).toContain('<path d=\\\\\\"M0 0h1v1z\\\\\\"/>');
+    expect(module).toContain('<circle cx=\\\\\\"1\\\\\\" cy=\\\\\\"1\\\\\\" r=\\\\\\"1\\\\\\"/>');
     expect(dataIndex(["demo"])).toContain('"demo": () => import("./demo"),');
   });
 
