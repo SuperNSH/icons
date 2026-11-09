@@ -144,8 +144,8 @@ describe("the gallery", () => {
     expect(index).toContain('"favourite",');
     const module = dataModule("demo", "Demo Set", "MIT", "9.9.9", resolved.map((icon) => [icon.body, icon.viewBox]));
     expect(module).toContain('export const BODIES: Array<[body: string, viewBox: [number, number, number, number]]> = [');
-    expect(module).toContain('<path d="M0 0h1v1z"/>');
-    expect(module).toContain('<circle cx="1" cy="1" r="1"/>');
+    expect(module).toContain('<path d=\\"M0 0h1v1z\\"/>');
+    expect(module).toContain('<circle cx=\\"1\\" cy=\\"1\\" r=\\"1\\"/>');
     expect(dataIndex(["demo"])).toContain('"demo": () => import("./demo"),');
   });
 
