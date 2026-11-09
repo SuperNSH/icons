@@ -2,6 +2,20 @@ import { Image, Text } from "nsh";
 import type { ColorValue } from "nsh";
 import { type IconData, svgDataUri } from "./markup";
 
+/** The data URI of every icon drawn so far, by identity: hosts cache the
+ * decoded image by its src, so a stable string keeps the cache warm across
+ * the recycling of a virtualized list. */
+const uris = new WeakMap<IconData, string>();
+
+function uriOf(icon: IconData): string {
+  let uri = uris.get(icon);
+  if (uri === undefined) {
+    uri = svgDataUri(icon);
+    uris.set(icon, uri);
+  }
+  return uri;
+}
+
 /** One glyph of a font `nsh-icons font` made. */
 export interface GlyphData {
   /** The font's family name: the default export of its `.ttf` import. */
@@ -27,7 +41,7 @@ export function Icon(props: IconProps) {
   const [, , width, height] = props.icon.viewBox;
   return (
     <Image
-      src={svgDataUri(props.icon)}
+      src={uriOf(props.icon)}
       testID={props.testID}
       accessibilityLabel={props.label}
       style={{
