@@ -59,7 +59,8 @@ test("a set with weights gets its variant chips, and global search counts sets",
 
 test("a narrow window carries the sets and the detail in sheets", async () => {
   const app = await open("../App.tsx", { width: 720, height: 900 });
-  await app.waitFor("text:nsh-icons");
+  // The sidebar's title lives in the closed sheet; the Sets button is what shows.
+  await app.waitFor("id:sets-button");
   await app.press("id:sets-button");
   await app.waitFor("id:all-sets");
   await app.press("id:all-sets");
@@ -94,7 +95,8 @@ test("the studio composes the export: shape, padding and fill retile the preview
 });
 
 test("the studio picks a raster format, sizes it, and hands the file to the downloader", async () => {
-  const app = await open("../App.tsx", { width: 1400, height: 900 });
+  // The web platform, so the download button stands in the studio.
+  const app = await open("../App.tsx", { width: 1400, height: 900, platform: "web" });
   await app.waitFor("id:card-lucide");
   await app.press("id:card-lucide");
   await app.type("id:search", "house");

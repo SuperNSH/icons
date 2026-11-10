@@ -82,8 +82,9 @@ const fgFrom = signal("#f59e0b");
 const fgTo = signal("#ec4899");
 const gradDir = signal<GradDir>("br");
 const pngSize = signal(512);
-/** The custom pixel size field's draft, empty until the field is touched. */
-const pngCustom = signal("");
+/** Whether the custom pixel size field is in use, and its draft. */
+const customSize = signal(false);
+const customSizeText = signal("");
 /** The copy and export studio: one dialog both actions open. */
 const studioOpen = signal(false);
 const format = signal<Format>("svg");
@@ -808,7 +809,6 @@ function downloadLabel(): string {
  * The preview above is the file: the same markup runs the download. The
  * button saves only where a file can be written; elsewhere it explains. */
 function ExportPanel(icon: IconData) {
-  const sizePreset = () => (RASTER_SIZES.includes(pngSize()) ? String(pngSize()) : "custom");
   return (
     <View class="gap-3 rounded-xl border border-border bg-card p-3">
       <Text class="text-xs font-semibold text-muted-foreground">Export</Text>
@@ -832,20 +832,21 @@ function ExportPanel(icon: IconData) {
           <Segmented
             testID="studio-size"
             label="Pixel size"
-            value={sizePreset()}
+            value={customSize() ? "custom" : String(pngSize())}
             onChange={(id) => {
-              pngCustom.set("");
+              customSize.set(id === "custom");
+              customSizeText.set("");
               if (id !== "custom") pngSize.set(Number(id));
             }}
             options={[...RASTER_SIZES.map((pixels) => ({ id: String(pixels), label: String(pixels) })), { id: "custom", label: "Custom" }]}
           />
-          {sizePreset() === "custom" ? (
+          {customSize() ? (
             <Input
               testID="studio-size-input"
-              value={pngCustom()}
+              value={customSizeText()}
               placeholder={String(pngSize())}
               onChange={(event) => {
-                pngCustom.set(event.value);
+                customSizeText.set(event.value);
                 const pixels = Number.parseInt(event.value, 10);
                 if (Number.isFinite(pixels) && pixels >= RASTER_MIN) pngSize.set(Math.min(RASTER_MAX, pixels));
               }}
