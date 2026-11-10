@@ -21,7 +21,7 @@ import {
   type WebViewRef,
   type JSX,
 } from "nsh";
-import { Button, Collapsible, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Popover, Sheet, Slider, Tab } from "nsh/base";
+import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Dialog, Input, Popover, Sheet, Slider, Tab } from "nsh/base";
 import { Glyph, Icon, svgMarkup, type IconData } from "supernsh-icons";
 import { rustName, tsName } from "supernsh-icons/iconify";
 import { SETS, VERSION, type DemoSet } from "./src/demo-index";
@@ -52,11 +52,14 @@ const loadedTick = signal(0);
 const CANVAS = 512;
 const PADDING_MAX = 192;
 const SHAPE_MAX = CANVAS / 2;
-const PNG_SIZES = [256, 512, 1024];
+const RASTER_SIZES = [256, 512, 1024, 2048];
+const RASTER_MIN = 16;
+const RASTER_MAX = 4096;
 
 type GradDir = "r" | "br" | "b" | "tr";
 type Shape = "square" | "rounded" | "circle";
 type BgMode = "none" | "solid" | "gradient";
+type Format = "svg" | "png" | "jpeg";
 
 /** Gradient direction as userSpaceOnUse coordinates across the canvas. */
 const GRADIENT_DIRS: Record<GradDir, [number, number, number, number]> = {
@@ -79,7 +82,14 @@ const fgFrom = signal("#f59e0b");
 const fgTo = signal("#ec4899");
 const gradDir = signal<GradDir>("br");
 const pngSize = signal(512);
-const advanced = signal(false);
+/** The custom pixel size field's draft, empty until the field is touched. */
+const pngCustom = signal("");
+/** The copy and export studio: one dialog both actions open. */
+const studioOpen = signal(false);
+const format = signal<Format>("svg");
+const jpegQuality = signal(85);
+/** JPEG has no transparency: the flat color under the canvas and its corners. */
+const jpegBg = signal("#ffffff");
 
 /** The app runs in a browser: the only target where a file can be saved. */
 const isWeb = platform.os === "web";
@@ -223,11 +233,18 @@ addEventListener("message", (event) => {
     const canvas = document.createElement("canvas");
     canvas.width = job.width;
     canvas.height = job.height;
-    canvas.getContext("2d").drawImage(image, 0, 0, job.width, job.height);
+    const context = canvas.getContext("2d");
+    // JPEG has no alpha: `base` fills the canvas first, so transparent
+    // corners and a backgroundless SVG land on that color, not on black.
+    if (job.base) {
+      context.fillStyle = job.base;
+      context.fillRect(0, 0, job.width, job.height);
+    }
+    context.drawImage(image, 0, 0, job.width, job.height);
     URL.revokeObjectURL(source);
     canvas.toBlob((blob) => {
       if (blob) save(blob, job.name);
-    }, "image/png");
+    }, job.mime, job.quality);
   };
   image.onerror = () => URL.revokeObjectURL(source);
   image.src = source;
@@ -239,9 +256,21 @@ function announce(text: string) {
   setTimeout(() => toast.set(""), 1800);
 }
 
-/** Hands the composed file to the downloader page; `raster` turns it into a PNG of that pixel size. */
-function download(name: string, text: string, mime: string, raster?: number) {
-  downloader?.postMessage(JSON.stringify({ kind: "download", name, text, mime, width: raster ?? 0, height: raster ?? 0 }));
+/** Hands the composed file to the downloader page; a `bitmap` size turns it
+ * into a raster of that pixel size, with `base` under it and a JPEG quality. */
+function download(name: string, text: string, mime: string, bitmap?: { size: number; quality?: number; base?: string }) {
+  downloader?.postMessage(
+    JSON.stringify({
+      kind: "download",
+      name,
+      text,
+      mime,
+      width: bitmap?.size ?? 0,
+      height: bitmap?.size ?? 0,
+      quality: bitmap?.quality,
+      base: bitmap?.base,
+    }),
+  );
   announce(`Saving ${name}`);
 }
 
@@ -265,28 +294,44 @@ function copied(what: string, text: string) {
   );
 }
 
-function copyActions(icon: IconData): Array<{ id: string; label: string; text: () => string }> {
+/** The TSX an app pastes: the CLI's named export and the `<Icon>` call. */
+function tsSnippet(icon: IconData): string {
   const ident = tsName(icon.set, icon.name);
-  const constant = rustName(icon.set, icon.name);
-  const module = icon.set.replace(/-/g, "_");
-  return [
-    { id: "copy-id", label: "Iconify id", text: () => `${icon.set}:${icon.name}` },
-    { id: "copy-svg", label: "SVG", text: () => svgMarkup(icon) },
-    { id: "copy-add", label: "add command", text: () => `supernsh-icons add ${icon.set}:${icon.name} --out src/icons.ts` },
-    {
-      id: "copy-tsx",
-      label: "TSX",
-      text: () => `import { Icon } from "supernsh-icons";\nimport { ${ident} } from "./src/icons";\n\n<Icon icon={${ident}} size={${size()}}${color() ? ` color="${color()}"` : ""} label="${baseName(icon.name)}" />`,
-    },
-    {
-      id: "copy-rust",
-      label: "Rust",
-      text: () => `// Cargo.toml: supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["${icon.set}"] }\nuse supernsh_icons::{icon, ${module}};\n\nicon(${module}::${constant}).size(px(${size()}.0))`,
-    },
-  ];
+  return `import { Icon } from "supernsh-icons";\nimport { ${ident} } from "./src/icons";\n\n<Icon icon={${ident}} size={${size()}${color() ? ` color="${color()}"` : ""} label="${baseName(icon.name)}" />`;
 }
 
-/** The studio's settings as one value, read fresh on every recompose. */
+/** The Rust an app pastes: the Cargo feature, the module's constant, the call. */
+function rustSnippet(icon: IconData): string {
+  const constant = rustName(icon.set, icon.name);
+  const module = icon.set.replace(/-/g, "_");
+  return `// Cargo.toml: supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["${icon.set}"] }\nuse supernsh_icons::{icon, ${module}};\n\nicon(${module}::${constant}).size(px(${size()}.0))`;
+}
+
+/** The bitmap's pixel size: the custom field's value, held to the sane range. */
+function raster(): number {
+  return Math.min(RASTER_MAX, Math.max(RASTER_MIN, Math.round(pngSize() || 512)));
+}
+
+/** What the preview canvas becomes, in the format's own terms. */
+function studioCaption(icon: IconData): string {
+  const dims = `${icon.viewBox[2]} × ${icon.viewBox[3]} glyph on a ${CANVAS} × ${CANVAS} canvas${icon.multicolor ? " · multicolor" : ""}`;
+  if (format() === "svg") return `${dims} · saves as vector`;
+  const quality = format() === "jpeg" ? ` at ${jpegQuality()}% quality` : "";
+  return `${dims} · saves ${raster()} × ${raster()} px${quality}`;
+}
+
+/** Runs the picked format's download from the studio's current settings. */
+function runExport(icon: IconData) {
+  const base = `${icon.set}-${icon.name}`;
+  const markup = studioMarkup(icon, studioOpts());
+  if (format() === "svg") download(`${base}.svg`, markup, "image/svg+xml");
+  else if (format() === "png") download(`${base}-${raster()}.png`, markup, "image/png", { size: raster() });
+  else download(`${base}-${raster()}.jpg`, markup, "image/jpeg", { size: raster(), quality: jpegQuality() / 100, base: jpegBg() });
+}
+
+/** The studio's settings as one value, read fresh on every recompose. A JPEG
+ * with the background off paints the flat JPEG color instead, so the preview
+ * shows the file's real pixels. */
 function studioOpts(): {
   pad: number;
   radius: number;
@@ -300,11 +345,12 @@ function studioOpts(): {
   dir: GradDir;
   tint: string;
 } {
+  const flat = format() === "jpeg" && bgMode() === "none";
   return {
     pad: pad(),
     radius: shape() === "circle" ? SHAPE_MAX : shape() === "rounded" ? cornerRadius() : 0,
-    bg: bgMode(),
-    bgColor: bgColor(),
+    bg: flat ? "solid" : bgMode(),
+    bgColor: flat ? jpegBg() : bgColor(),
     bgFrom: bgFrom(),
     bgTo: bgTo(),
     fillGradient: fillGradient(),
@@ -707,136 +753,328 @@ function DirectionRow() {
   );
 }
 
-function StudioAdvanced(icon: IconData) {
+/** One language's snippet: the code and the copy button that takes it. */
+function CodeCard(props: { testID: string; label: string; code: () => string }) {
   return (
-    <Collapsible
-      open={advanced()}
-      reveal
-      content={
-        <View class="gap-4 pt-3">
-          <StudioRow label="Padding">
-            <Slider
-              testID="studio-pad"
-              value={pad()}
-              min={0}
-              max={PADDING_MAX}
-              step={4}
-              accessibilityLabel="Padding around the icon"
-              onChange={(event) => pad.set(event.value as number)}
-              class="w-full"
-              trackClass="h-6 justify-center"
-              indicatorClass="h-1.5 rounded-full bg-muted"
-              rangeClass="rounded-full bg-primary"
-              thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
-            >
-              <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${pad()}`}</Text>
-            </Slider>
-          </StudioRow>
-          <StudioRow label="Shape">
-            <Segmented
-              testID="studio-shape"
-              label="Icon shape"
-              value={shape()}
-              onChange={(id) => shape.set(id as Shape)}
-              options={[
-                { id: "square", label: "Square" },
-                { id: "rounded", label: "Rounded" },
-                { id: "circle", label: "Circle" },
-              ]}
+    <View class="gap-1.5 rounded-lg border border-border bg-card p-3">
+      <View class="flex-row items-center justify-between gap-2">
+        <Text class="text-xs font-medium text-muted-foreground">{props.label}</Text>
+        <Button
+          testID={props.testID}
+          onPress={() => copied(props.label, props.code())}
+          accessibilityLabel={`Copy the ${props.label} snippet`}
+          class="rounded-md border border-border bg-background px-2 py-1 active:bg-muted"
+        >
+          <Text class="text-xs text-foreground">Copy</Text>
+        </Button>
+      </View>
+      <Text class="font-mono text-xs leading-5 text-foreground">{props.code()}</Text>
+    </View>
+  );
+}
+
+/** The small exact copies: the id, the raw SVG, the CLI's add command. */
+function CopyChips(icon: IconData) {
+  const chips: Array<{ id: string; label: string; text: () => string }> = [
+    { id: "copy-id", label: "Iconify id", text: () => `${icon.set}:${icon.name}` },
+    { id: "copy-svg", label: "SVG markup", text: () => svgMarkup(icon) },
+    { id: "copy-add", label: "add command", text: () => `supernsh-icons add ${icon.set}:${icon.name} --out src/icons.ts` },
+  ];
+  return (
+    <View class="flex-row flex-wrap gap-1.5">
+      <Each of={chips}>
+        {(chip) => (
+          <Button
+            testID={chip().id}
+            onPress={() => copied(chip().label, chip().text())}
+            class="rounded-full border border-border bg-card px-2.5 py-1 active:bg-muted"
+          >
+            <Text class="text-xs text-foreground">{`Copy ${chip().label}`}</Text>
+          </Button>
+        )}
+      </Each>
+    </View>
+  );
+}
+
+/** The download button's own summary: the format, its pixel size and quality. */
+function downloadLabel(): string {
+  if (format() === "svg") return "Download SVG";
+  const quality = format() === "jpeg" ? ` · ${jpegQuality()}%` : "";
+  return `Download ${format().toUpperCase()} · ${raster()} px${quality}`;
+}
+
+/** The export half of the studio: the format and everything it composes.
+ * The preview above is the file: the same markup runs the download. The
+ * button saves only where a file can be written; elsewhere it explains. */
+function ExportPanel(icon: IconData) {
+  const sizePreset = () => (RASTER_SIZES.includes(pngSize()) ? String(pngSize()) : "custom");
+  return (
+    <View class="gap-3 rounded-xl border border-border bg-card p-3">
+      <Text class="text-xs font-semibold text-muted-foreground">Export</Text>
+      <StudioRow label="Format">
+        <Segmented
+          testID="studio-format"
+          label="Export format"
+          value={format()}
+          onChange={(id) => format.set(id as Format)}
+          options={[
+            { id: "svg", label: "SVG" },
+            { id: "png", label: "PNG" },
+            { id: "jpeg", label: "JPEG" },
+          ]}
+        />
+      </StudioRow>
+      {format() === "svg" ? (
+        <Text class="text-xs text-muted-foreground">SVG keeps the glyph a vector: any size, transparent background.</Text>
+      ) : (
+        <StudioRow label="Pixel size">
+          <Segmented
+            testID="studio-size"
+            label="Pixel size"
+            value={sizePreset()}
+            onChange={(id) => {
+              pngCustom.set("");
+              if (id !== "custom") pngSize.set(Number(id));
+            }}
+            options={[...RASTER_SIZES.map((pixels) => ({ id: String(pixels), label: String(pixels) })), { id: "custom", label: "Custom" }]}
+          />
+          {sizePreset() === "custom" ? (
+            <Input
+              testID="studio-size-input"
+              value={pngCustom()}
+              placeholder={String(pngSize())}
+              onChange={(event) => {
+                pngCustom.set(event.value);
+                const pixels = Number.parseInt(event.value, 10);
+                if (Number.isFinite(pixels) && pixels >= RASTER_MIN) pngSize.set(Math.min(RASTER_MAX, pixels));
+              }}
+              accessibilityLabel="Custom pixel size"
+              class="h-9 rounded-md border border-input bg-background px-2 font-mono text-sm text-foreground"
             />
-            {shape() === "rounded" ? (
-              <Slider
-                testID="studio-radius"
-                value={cornerRadius()}
-                min={0}
-                max={SHAPE_MAX}
-                step={8}
-                accessibilityLabel="Corner radius"
-                onChange={(event) => cornerRadius.set(event.value as number)}
-                class="w-full"
-                trackClass="h-6 justify-center"
-                indicatorClass="h-1.5 rounded-full bg-muted"
-                rangeClass="rounded-full bg-primary"
-                thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
-              >
-                <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${Math.round((cornerRadius() / SHAPE_MAX) * 100)}%`}</Text>
-              </Slider>
-            ) : (
-              <View />
-            )}
-          </StudioRow>
-          <StudioRow label="Background">
-            <Segmented
-              testID="studio-bg"
-              label="Background"
-              value={bgMode()}
-              onChange={(id) => bgMode.set(id as BgMode)}
-              options={[
-                { id: "none", label: "None" },
-                { id: "solid", label: "Solid" },
-                { id: "gradient", label: "Gradient" },
-              ]}
-            />
-            {bgMode() === "solid" ? (
-              <View class="flex-row items-center gap-2">
-                <ColorStop testID="studio-bg-color" label="Background color" color={bgColor()} onPick={(hex) => bgColor.set(hex)} />
-                <Text class="font-mono text-xs text-muted-foreground">{bgColor()}</Text>
-              </View>
-            ) : bgMode() === "gradient" ? (
-              <View class="flex-row items-center gap-2">
-                <ColorStop testID="studio-bg-from" label="Gradient start" color={bgFrom()} onPick={(hex) => bgFrom.set(hex)} />
-                <ColorStop testID="studio-bg-to" label="Gradient end" color={bgTo()} onPick={(hex) => bgTo.set(hex)} />
-              </View>
-            ) : (
-              <View />
-            )}
-          </StudioRow>
-          <StudioRow label="Icon fill">
-            <Segmented
-              testID="studio-fill"
-              label="Icon fill"
-              value={icon.multicolor || !fillGradient() ? "tint" : "gradient"}
-              onChange={(id) => fillGradient.set(id === "gradient")}
-              options={icon.multicolor ? [{ id: "tint", label: "Own colors" }] : [{ id: "tint", label: "Tint" }, { id: "gradient", label: "Gradient" }]}
-            />
-            {fillGradient() && !icon.multicolor ? (
-              <View class="flex-row items-center gap-2">
-                <ColorStop testID="studio-fg-from" label="Fill gradient start" color={fgFrom()} onPick={(hex) => fgFrom.set(hex)} />
-                <ColorStop testID="studio-fg-to" label="Fill gradient end" color={fgTo()} onPick={(hex) => fgTo.set(hex)} />
-              </View>
-            ) : (
-              <View />
-            )}
-          </StudioRow>
-          {bgMode() === "gradient" || (fillGradient() && !icon.multicolor) ? (
-            <DirectionRow />
           ) : (
             <View />
           )}
-          <StudioRow label="PNG size">
-            <Segmented
-              testID="studio-png"
-              label="PNG pixel size"
-              value={String(pngSize())}
-              onChange={(id) => pngSize.set(Number(id))}
-              options={PNG_SIZES.map((pixels) => ({ id: String(pixels), label: String(pixels) }))}
-            />
-          </StudioRow>
+        </StudioRow>
+      )}
+      {format() === "jpeg" ? (
+        <StudioRow label="JPEG quality">
+          <Slider
+            testID="studio-quality"
+            value={jpegQuality()}
+            min={40}
+            max={100}
+            step={5}
+            accessibilityLabel="JPEG quality"
+            onChange={(event) => jpegQuality.set(event.value as number)}
+            class="w-full"
+            trackClass="h-6 justify-center"
+            indicatorClass="h-1.5 rounded-full bg-muted"
+            rangeClass="rounded-full bg-primary"
+            thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
+          >
+            <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${jpegQuality()}%`}</Text>
+          </Slider>
+        </StudioRow>
+      ) : (
+        <View />
+      )}
+      {format() === "jpeg" && bgMode() === "none" ? (
+        <StudioRow label="JPEG background">
+          <View class="flex-row items-center gap-2">
+            <ColorStop testID="studio-jpeg-base" label="JPEG background color" color={jpegBg()} onPick={(hex) => jpegBg.set(hex)} />
+            <Text class="font-mono text-xs text-muted-foreground">{jpegBg()}</Text>
+          </View>
+          <Text class="text-xs text-muted-foreground">JPEG has no transparency: this fills the canvas and its corners.</Text>
+        </StudioRow>
+      ) : (
+        <View />
+      )}
+      <StudioRow label="Padding">
+        <Slider
+          testID="studio-pad"
+          value={pad()}
+          min={0}
+          max={PADDING_MAX}
+          step={4}
+          accessibilityLabel="Padding around the icon"
+          onChange={(event) => pad.set(event.value as number)}
+          class="w-full"
+          trackClass="h-6 justify-center"
+          indicatorClass="h-1.5 rounded-full bg-muted"
+          rangeClass="rounded-full bg-primary"
+          thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
+        >
+          <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${pad()}`}</Text>
+        </Slider>
+      </StudioRow>
+      <StudioRow label="Shape">
+        <Segmented
+          testID="studio-shape"
+          label="Icon shape"
+          value={shape()}
+          onChange={(id) => shape.set(id as Shape)}
+          options={[
+            { id: "square", label: "Square" },
+            { id: "rounded", label: "Rounded" },
+            { id: "circle", label: "Circle" },
+          ]}
+        />
+        {shape() === "rounded" ? (
+          <Slider
+            testID="studio-radius"
+            value={cornerRadius()}
+            min={0}
+            max={SHAPE_MAX}
+            step={8}
+            accessibilityLabel="Corner radius"
+            onChange={(event) => cornerRadius.set(event.value as number)}
+            class="w-full"
+            trackClass="h-6 justify-center"
+            indicatorClass="h-1.5 rounded-full bg-muted"
+            rangeClass="rounded-full bg-primary"
+            thumbClass="size-4 rounded-full border border-border bg-background focus:ring-2 focus:ring-ring"
+          >
+            <Text class="w-9 text-right text-xs tabular-nums text-muted-foreground">{`${Math.round((cornerRadius() / SHAPE_MAX) * 100)}%`}</Text>
+          </Slider>
+        ) : (
+          <View />
+        )}
+      </StudioRow>
+      <StudioRow label="Background">
+        <Segmented
+          testID="studio-bg"
+          label="Background"
+          value={bgMode()}
+          onChange={(id) => bgMode.set(id as BgMode)}
+          options={[
+            { id: "none", label: "None" },
+            { id: "solid", label: "Solid" },
+            { id: "gradient", label: "Gradient" },
+          ]}
+        />
+        {bgMode() === "solid" ? (
+          <View class="flex-row items-center gap-2">
+            <ColorStop testID="studio-bg-color" label="Background color" color={bgColor()} onPick={(hex) => bgColor.set(hex)} />
+            <Text class="font-mono text-xs text-muted-foreground">{bgColor()}</Text>
+          </View>
+        ) : bgMode() === "gradient" ? (
+          <View class="flex-row items-center gap-2">
+            <ColorStop testID="studio-bg-from" label="Gradient start" color={bgFrom()} onPick={(hex) => bgFrom.set(hex)} />
+            <ColorStop testID="studio-bg-to" label="Gradient end" color={bgTo()} onPick={(hex) => bgTo.set(hex)} />
+          </View>
+        ) : (
+          <View />
+        )}
+      </StudioRow>
+      <StudioRow label="Icon fill">
+        <Segmented
+          testID="studio-fill"
+          label="Icon fill"
+          value={icon.multicolor || !fillGradient() ? "tint" : "gradient"}
+          onChange={(id) => fillGradient.set(id === "gradient")}
+          options={icon.multicolor ? [{ id: "tint", label: "Own colors" }] : [{ id: "tint", label: "Tint" }, { id: "gradient", label: "Gradient" }]}
+        />
+        {fillGradient() && !icon.multicolor ? (
+          <View class="flex-row items-center gap-2">
+            <ColorStop testID="studio-fg-from" label="Fill gradient start" color={fgFrom()} onPick={(hex) => fgFrom.set(hex)} />
+            <ColorStop testID="studio-fg-to" label="Fill gradient end" color={fgTo()} onPick={(hex) => fgTo.set(hex)} />
+          </View>
+        ) : (
+          <View />
+        )}
+      </StudioRow>
+      {bgMode() === "gradient" || (fillGradient() && !icon.multicolor) ? (
+        <DirectionRow />
+      ) : (
+        <View />
+      )}
+      {isWeb ? (
+        <Button
+          testID="studio-download"
+          onPress={() => runExport(icon)}
+          class="items-center rounded-lg bg-primary px-3 py-2.5 active:bg-primary/90"
+        >
+          <Text class="text-sm font-semibold text-primary-foreground">{downloadLabel()}</Text>
+        </Button>
+      ) : (
+        <View
+          role="button"
+          accessibilityLabel="Saving files needs the web build"
+          accessibilityState={{ disabled: true }}
+          class="items-center rounded-lg border border-border bg-card px-3 py-2.5"
+        >
+          <Text class="text-sm text-muted-foreground">{`Saving ${format().toUpperCase()} files needs the web build`}</Text>
         </View>
-      }
+      )}
+      <Text class="text-center text-xs text-muted-foreground">The download is this preview, byte for byte.</Text>
+    </View>
+  );
+}
+
+/** The copy and export studio: the composed preview, the TS and Rust an app
+ * pastes, the small exact copies, and the format's download. Both detail
+ * actions open it. */
+function StudioModal() {
+  return (
+    <Dialog
+      testID="studio"
+      open={studioOpen() && active() !== null}
+      animation="fade"
+      onOpenChange={(event) => studioOpen.set(event.open)}
+      backdropClass="bg-black/50"
+      class="m-auto h-[90%] w-11/12 max-w-lg flex-col rounded-xl border border-border bg-popover shadow-2xl"
     >
-      <View
-        testID="studio-advanced"
-        role="button"
-        accessibilityLabel="Advanced export options"
-        accessibilityState={{ expanded: advanced() }}
-        onPress={() => advanced.update((open) => !open)}
-        class="flex-row items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
-      >
-        <Text class="text-sm font-medium text-foreground">Advanced</Text>
-        <Text class="text-xs text-muted-foreground">{advanced() ? "Hide" : "Padding, shape, colors"}</Text>
-      </View>
-    </Collapsible>
+      <Each of={activeList()}>
+        {(current) => {
+          const icon = current().icon;
+          return (
+            <View class="min-h-0 flex-1 flex-col">
+              <View class="flex-row items-center gap-2 border-b border-border px-4 py-3">
+                <View class="min-w-0 flex-1 gap-0.5">
+                  <Text class="line-clamp-1 font-mono text-sm font-medium text-foreground">{`${icon.set}:${icon.name}`}</Text>
+                  <Text class="line-clamp-1 text-xs text-muted-foreground">{`${current().meta.name} · ${current().meta.license}${current().meta.restrictive ? " (asks attribution or limits use)" : ""}`}</Text>
+                </View>
+                <Button
+                  testID="studio-close"
+                  accessibilityLabel="Close the studio"
+                  onPress={() => studioOpen.set(false)}
+                  class="size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card active:bg-muted"
+                >
+                  <Text class="text-sm text-muted-foreground">✕</Text>
+                </Button>
+              </View>
+              <Scroll class="min-h-0 flex-1">
+                <View class="gap-4 p-4">
+                  <View class="items-center gap-2 py-1">
+                    <Image
+                      testID="studio-preview"
+                      src={documentUri(studioMarkup(icon, studioOpts()))}
+                      style={{ width: 176, height: 176 }}
+                      accessibilityLabel="Export preview"
+                    />
+                    <Text class="text-center text-xs text-muted-foreground">{studioCaption(icon)}</Text>
+                  </View>
+                  <CodeCard testID="copy-ts" label="Use in TypeScript" code={() => tsSnippet(icon)} />
+                  <CodeCard testID="copy-rust" label="Use in Rust" code={() => rustSnippet(icon)} />
+                  {CopyChips(icon)}
+                  {ExportPanel(icon)}
+                </View>
+              </Scroll>
+              {/* The dialog is its own window layer above the app's, so this is
+               * where the copies' and downloads' toast can be seen. */}
+              {toast() ? (
+                <View class="absolute bottom-4 left-4 right-4 items-center rounded-lg bg-primary px-3 py-2 shadow-lg">
+                  <Text class="text-sm text-primary-foreground">{toast()}</Text>
+                </View>
+              ) : (
+                <View />
+              )}
+            </View>
+          );
+        }}
+      </Each>
+    </Dialog>
   );
 }
 
@@ -847,21 +1085,35 @@ function Detail() {
         <Each of={activeList()}>
           {(current) => {
             const icon = current().icon;
-            const base = `${icon.set}-${icon.name}`;
             return (
               <View class="gap-4">
                 <View class="items-center py-2">
-                  <Image
-                    testID="studio-preview"
-                    src={documentUri(studioMarkup(icon, studioOpts()))}
-                    style={{ width: 192, height: 192 }}
-                    accessibilityLabel="Export preview"
-                  />
+                  <View class={`items-center justify-center rounded-xl border p-6 ${tileFrame()}`}>
+                    <Icon icon={icon} size={72} color={icon.multicolor ? undefined : previewColor()} label={icon.name} />
+                  </View>
                 </View>
                 <View class="gap-1">
                   <Text testID="detail-id" class="font-mono text-sm font-medium text-foreground">{`${icon.set}:${icon.name}`}</Text>
                   <Text class="line-clamp-1 text-xs text-muted-foreground">{`${current().meta.name} · ${current().meta.license}${current().meta.restrictive ? " (asks attribution or limits use)" : ""}`}</Text>
-                  <Text class="text-xs text-muted-foreground">{`${icon.viewBox[2]} × ${icon.viewBox[3]} glyph on a ${CANVAS} × ${CANVAS} export${icon.multicolor ? " · multicolor" : ""}`}</Text>
+                  <Text class="text-xs text-muted-foreground">{`${icon.viewBox[2]} × ${icon.viewBox[3]} glyph${icon.multicolor ? " · multicolor" : ""}`}</Text>
+                </View>
+                <View class="flex-row gap-2">
+                  <Button
+                    testID="action-copy"
+                    accessibilityLabel="Copy snippets for this icon"
+                    onPress={() => studioOpen.set(true)}
+                    class="flex-1 items-center rounded-lg border border-border bg-card px-3 py-2 active:bg-muted"
+                  >
+                    <Text class="text-sm font-medium text-foreground">Copy</Text>
+                  </Button>
+                  <Button
+                    testID="action-export"
+                    accessibilityLabel="Open the export studio"
+                    onPress={() => studioOpen.set(true)}
+                    class="flex-1 items-center rounded-lg bg-primary px-3 py-2 active:bg-primary/90"
+                  >
+                    <Text class="text-sm font-medium text-primary-foreground">Export</Text>
+                  </Button>
                 </View>
                 <View class="gap-2">
                   <Text class="text-xs font-medium text-muted-foreground">Variants</Text>
@@ -881,43 +1133,6 @@ function Detail() {
                       )}
                     </Each>
                   </View>
-                </View>
-                {isWeb ? (
-                  <View class="flex-row gap-2">
-                    <Button
-                      testID="download-svg"
-                      accessibilityLabel="Download SVG"
-                      onPress={() => download(`${base}.svg`, studioMarkup(icon, studioOpts()), "image/svg+xml")}
-                      class="flex-1 items-center rounded-lg border border-border bg-card px-3 py-2 active:bg-muted"
-                    >
-                      <Text class="text-sm font-medium text-foreground">SVG</Text>
-                    </Button>
-                    <Button
-                      testID="download-png"
-                      accessibilityLabel="Download PNG"
-                      onPress={() => download(`${base}-${pngSize()}.png`, studioMarkup(icon, studioOpts()), "image/png", pngSize())}
-                      class="flex-1 items-center rounded-lg bg-primary px-3 py-2 active:bg-primary/90"
-                    >
-                      <Text class="text-sm font-medium text-primary-foreground">PNG</Text>
-                    </Button>
-                  </View>
-                ) : (
-                  <View />
-                )}
-                {StudioAdvanced(icon)}
-                <View class="gap-1.5">
-                  <Each of={copyActions(icon)}>
-                    {(action) => (
-                      <Button
-                        testID={action().id}
-                        onPress={() => copied(action().label, action().text())}
-                        class="flex-row items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2"
-                      >
-                        <Text class="shrink-0 text-sm text-foreground">{`Copy ${action().label}`}</Text>
-                        <Text class="line-clamp-1 min-w-0 flex-1 text-right text-xs text-muted-foreground">{action().text().split("\n")[0].replace(/<[^>]*>/g, "").slice(0, 36)}</Text>
-                      </Button>
-                    )}
-                  </Each>
                 </View>
               </View>
             );
@@ -985,13 +1200,7 @@ function App() {
           <Detail />
         </Sheet>
       )}
-      {toast() ? (
-        <View class="absolute bottom-4 right-4 rounded-lg bg-primary px-3 py-2 shadow-lg">
-          <Text class="text-sm text-primary-foreground">{toast()}</Text>
-        </View>
-      ) : (
-        <View />
-      )}
+      <StudioModal />
     </View>
   );
 }
