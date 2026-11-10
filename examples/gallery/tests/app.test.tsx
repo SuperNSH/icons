@@ -53,6 +53,21 @@ test("a set with weights gets its variant chips, and global search counts sets",
   await app.waitFor("id:hit-lucide");
 });
 
+test("a narrow window carries the sets and the detail in sheets", async () => {
+  const app = await open("../App.tsx", { width: 720, height: 900 });
+  await app.waitFor("text:nsh-icons");
+  await app.press("id:card-lucide");
+  await app.type("id:search", "house");
+  await app.waitFor("id:tile-lucide-house");
+  await app.press("id:tile-lucide-house");
+  await app.waitFor("id:detail");
+  await app.waitFor("text:lucide:house");
+  await app.press("id:sets-button");
+  await app.waitFor("id:all-sets");
+  await app.press("id:all-sets");
+  await app.waitFor("id:tile-lucide-house");
+});
+
 test("the studio composes the export: shape, padding and fill retile the preview", async () => {
   const app = await open("../App.tsx", { width: 1400, height: 900 });
   await app.waitFor("id:card-lucide");

@@ -169,9 +169,17 @@ const siblings = computed(() => {
 });
 
 const narrow = computed(() => windowSize().width < 900);
+/** Room for the detail pane beside the sidebar; below it the detail is a sheet,
+ * so the center pane never squeezes under its controls' minimum widths. */
+const wide = computed(() => windowSize().width >= 1200);
 const columns = computed(() => {
   const width = windowSize().width;
-  return width < 640 ? 4 : width < 900 ? 5 : width < 1280 ? 6 : 7;
+  return width < 400 ? 3 : width < 640 ? 4 : width < 900 ? 5 : width < 1280 ? 6 : 7;
+});
+/** Home cards hold four sample icons, so they take fewer columns than tiles. */
+const homeColumns = computed(() => {
+  const width = windowSize().width;
+  return width < 640 ? 2 : width < 1280 ? 3 : 4;
 });
 /** The canvas the icons sit on: the theme's, or the other one while previewed. */
 const canvasDark = computed(() => {
@@ -580,14 +588,14 @@ function Grid() {
 
 function Home() {
   return (
-    <Each of={[columns()]}>
+    <Each of={[homeColumns()]}>
       {(count) => (
-        <List testID="home" each={SETS} numColumns={Math.max(2, count() - 2)} estimatedItemSize={130} contentClass="gap-2 p-2" class="flex-1">
+        <List testID="home" each={SETS} numColumns={count()} estimatedItemSize={130} contentClass="gap-2 p-2" class="flex-1">
           {(meta) => (
             <Button testID={`card-${meta().prefix}`} onPress={() => openSet(meta())} class="gap-2 rounded-lg border border-border bg-card p-3">
-              <View class="flex-row gap-2">
+              <View class="flex-row gap-1.5">
                 <Each of={meta().samples}>
-                  {(sample) => <Icon icon={sample()} size={22} color={meta().multicolor ? undefined : previewColor()} />}
+                  {(sample) => <Icon icon={sample()} size={18} color={meta().multicolor ? undefined : previewColor()} />}
                 </Each>
               </View>
               <Text class="line-clamp-1 text-sm font-medium text-foreground">{meta().name}</Text>
@@ -834,7 +842,7 @@ function StudioAdvanced(icon: IconData) {
 
 function Detail() {
   return (
-    <Scroll testID="detail" class="w-80 shrink-0 border-l border-border">
+    <Scroll testID="detail" class={wide() ? "w-80 shrink-0 border-l border-border" : "w-80 max-w-full"}>
       <View class="gap-4 p-4">
         <Each of={activeList()}>
           {(current) => {
@@ -966,14 +974,16 @@ function App() {
           </View>
         );
       })()}
-      {narrow() ? (
+      {wide() ? (
+        active() ? (
+          <Detail />
+        ) : (
+          <View />
+        )
+      ) : (
         <Sheet open={active() !== null} side="right" onOpenChange={(event) => !event.open && active.set(null)}>
           <Detail />
         </Sheet>
-      ) : active() ? (
-        <Detail />
-      ) : (
-        <View />
       )}
       {toast() ? (
         <View class="absolute bottom-4 right-4 rounded-lg bg-primary px-3 py-2 shadow-lg">
