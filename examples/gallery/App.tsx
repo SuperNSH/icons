@@ -234,7 +234,7 @@ addEventListener("message", (event) => {
     canvas.width = job.width;
     canvas.height = job.height;
     const context = canvas.getContext("2d");
-    // JPEG has no alpha: `base` fills the canvas first, so transparent
+    // JPEG has no alpha: job.base fills the canvas first, so transparent
     // corners and a backgroundless SVG land on that color, not on black.
     if (job.base) {
       context.fillStyle = job.base;
