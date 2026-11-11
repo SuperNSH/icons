@@ -21,7 +21,7 @@ import {
   type WebViewRef,
   type JSX,
 } from "nsh";
-import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Dialog, Input, Popover, Sheet, Slider, Tab } from "nsh/base";
+import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Popover, Slider, Tab } from "nsh/base";
 import { Glyph, Icon, svgMarkup, type IconData } from "supernsh-icons";
 import { rustName, tsName } from "supernsh-icons/iconify";
 import { SETS, VERSION, type DemoSet } from "./src/demo-index";
@@ -167,6 +167,8 @@ const activeList = computed(() => {
   const current = active();
   return current ? [current] : [];
 });
+/** The studio's one icon while it is open: an empty list unmounts the overlay. */
+const studioList = computed(() => (studioOpen() ? activeList() : []));
 const siblings = computed(() => {
   void loadedTick();
   const current = active();
@@ -1013,24 +1015,30 @@ function ExportPanel(icon: IconData) {
   );
 }
 
-/** The copy and export studio: the composed preview, the TS and Rust an app
- * pastes, the small exact copies, and the format's download. Both detail
- * actions open it. */
+/** The copy and export studio: an in-app overlay with the composed preview,
+ * the TS and Rust an app pastes, the small exact copies, and the format's
+ * download. Both detail actions open it. Ordinary views, not a `Dialog`: the
+ * web runtime paints a dialog's own layer late, which flashes the card's
+ * content over the app with no card behind it. */
 function StudioModal() {
   return (
-    <Dialog
-      testID="studio"
-      open={studioOpen() && active() !== null}
-      animation="fade"
-      onOpenChange={(event) => studioOpen.set(event.open)}
-      backdropClass="bg-black/50"
-      class="m-auto h-[90%] w-11/12 max-w-lg flex-col rounded-xl border border-border bg-popover shadow-2xl"
-    >
-      <Each of={activeList()}>
-        {(current) => {
-          const icon = current().icon;
-          return (
-            <View class="min-h-0 flex-1 flex-col">
+    <Each of={studioList()}>
+      {(current) => {
+        const icon = current().icon;
+        return (
+          <View class="absolute inset-0 z-40 flex-col items-center justify-center p-4">
+            <View
+              testID="studio-backdrop"
+              role="button"
+              accessibilityLabel="Close the studio"
+              onPress={() => studioOpen.set(false)}
+              class="absolute inset-0 bg-black/50"
+            />
+            <View
+              testID="studio"
+              onPress={() => {}}
+              class="relative h-[90%] w-11/12 max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
+            >
               <View class="flex-row items-center gap-2 border-b border-border px-4 py-3">
                 <View class="min-w-0 flex-1 gap-0.5">
                   <Text class="line-clamp-1 font-mono text-sm font-medium text-foreground">{`${icon.set}:${icon.name}`}</Text>
@@ -1062,8 +1070,8 @@ function StudioModal() {
                   {ExportPanel(icon)}
                 </View>
               </Scroll>
-              {/* The dialog is its own window layer above the app's, so this is
-               * where the copies' and downloads' toast can be seen. */}
+              {/* Copies and downloads announce here: the overlay covers the
+               * app's own toast, so it would never be seen while open. */}
               {toast() ? (
                 <View class="absolute bottom-4 left-4 right-4 items-center rounded-lg bg-primary px-3 py-2 shadow-lg">
                   <Text class="text-sm text-primary-foreground">{toast()}</Text>
@@ -1072,16 +1080,16 @@ function StudioModal() {
                 <View />
               )}
             </View>
-          );
-        }}
-      </Each>
-    </Dialog>
+          </View>
+        );
+      }}
+    </Each>
   );
 }
 
 function Detail() {
   return (
-    <Scroll testID="detail" class={wide() ? "w-80 shrink-0 border-l border-border" : "w-80 max-w-full"}>
+    <Scroll testID="detail" class={wide() ? "w-80 shrink-0 border-l border-border" : "h-full w-full"}>
       <View class="gap-4 p-4">
         <Each of={activeList()}>
           {(current) => {
@@ -1116,25 +1124,29 @@ function Detail() {
                     <Text class="text-sm font-medium text-primary-foreground">Export</Text>
                   </Button>
                 </View>
-                <View class="gap-2">
-                  <Text class="text-xs font-medium text-muted-foreground">Variants</Text>
-                  <View class="flex-row flex-wrap gap-2">
-                    <Each of={siblings()}>
-                      {(sibling) => (
-                        <Button
-                          testID={`sibling-${sibling().name}`}
-                          onPress={() => openIcon(current().meta, sibling().name)}
-                          class="items-center gap-1 rounded-lg border border-border bg-card p-1.5"
-                        >
-                          <Icon icon={sibling()} size={20} color={sibling().multicolor ? undefined : previewColor()} />
-                          <Text class="line-clamp-1 w-16 text-center text-[10px] text-muted-foreground">
-                            {sibling().name.slice(baseName(current().icon.name).length).replace(/^-/, "") || "base"}
-                          </Text>
-                        </Button>
-                      )}
-                    </Each>
+                {siblings().length ? (
+                  <View class="gap-2">
+                    <Text class="text-xs font-medium text-muted-foreground">Variants</Text>
+                    <View class="flex-row flex-wrap gap-2">
+                      <Each of={siblings()}>
+                        {(sibling) => (
+                          <Button
+                            testID={`sibling-${sibling().name}`}
+                            onPress={() => openIcon(current().meta, sibling().name)}
+                            class="items-center gap-1 rounded-lg border border-border bg-card p-1.5"
+                          >
+                            <Icon icon={sibling()} size={20} color={sibling().multicolor ? undefined : previewColor()} />
+                            <Text class="line-clamp-1 w-16 text-center text-[10px] text-muted-foreground">
+                              {sibling().name.slice(baseName(current().icon.name).length).replace(/^-/, "") || "base"}
+                            </Text>
+                          </Button>
+                        )}
+                      </Each>
+                    </View>
                   </View>
-                </View>
+                ) : (
+                  <View />
+                )}
               </View>
             );
           }}
@@ -1146,6 +1158,11 @@ function Detail() {
 
 function App() {
   keymap.bind("mod+k", () => searchRef?.focus());
+  keymap.bind("escape", () => {
+    if (studioOpen.get()) studioOpen.set(false);
+    else if (sidebarOpen.get()) sidebarOpen.set(false);
+    else if (active.get()) active.set(null);
+  });
   effect(() => {
     const meta = pickedSet();
     if (meta && !cache.has(meta.prefix)) void iconsOf(meta);
@@ -1153,10 +1170,22 @@ function App() {
   return (
     <View class="flex-1 flex-row bg-background">
       {isWeb ? <WebView ref={(node) => (downloader = node)} html={DOWNLOADER} class="pointer-events-none absolute bottom-0 right-0 h-px w-px opacity-0" /> : <View />}
-      {narrow() ? (
-        <Sheet open={sidebarOpen()} side="left" onOpenChange={(event) => sidebarOpen.set(event.open)}>
-          <Sidebar />
-        </Sheet>
+      {narrow() && sidebarOpen() ? (
+        <View class="absolute inset-0 z-40 flex-row">
+          <View
+            testID="sets-backdrop"
+            role="button"
+            accessibilityLabel="Close the sets panel"
+            onPress={() => sidebarOpen.set(false)}
+            class="absolute inset-0 bg-black/50"
+          />
+          {/* The panel swallows presses so taps on its own quiet spots do not
+           * fall through to the backdrop behind it. */}
+          {/* A row, so the sidebar's own column stretches to the full height. */}
+          <View class="relative h-full w-64 flex-row bg-popover" onPress={() => {}}>
+            <Sidebar />
+          </View>
+        </View>
       ) : (
         <Sidebar />
       )}
@@ -1196,10 +1225,21 @@ function App() {
         ) : (
           <View />
         )
+      ) : active() ? (
+        <View class="absolute inset-0 z-40 flex-row justify-end">
+          <View
+            testID="detail-backdrop"
+            role="button"
+            accessibilityLabel="Close the icon details"
+            onPress={() => active.set(null)}
+            class="absolute inset-0 bg-black/50"
+          />
+          <View class="relative h-full w-80 flex-col bg-popover" onPress={() => {}}>
+            <Detail />
+          </View>
+        </View>
       ) : (
-        <Sheet open={active() !== null} side="right" onOpenChange={(event) => !event.open && active.set(null)}>
-          <Detail />
-        </Sheet>
+        <View />
       )}
       <StudioModal />
     </View>
