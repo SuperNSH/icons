@@ -1159,9 +1159,9 @@ function Detail() {
 function App() {
   keymap.bind("mod+k", () => searchRef?.focus());
   keymap.bind("escape", () => {
-    if (studioOpen.get()) studioOpen.set(false);
-    else if (sidebarOpen.get()) sidebarOpen.set(false);
-    else if (active.get()) active.set(null);
+    if (studioOpen()) studioOpen.set(false);
+    else if (sidebarOpen()) sidebarOpen.set(false);
+    else if (active()) active.set(null);
   });
   effect(() => {
     const meta = pickedSet();
