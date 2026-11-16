@@ -28,7 +28,7 @@
   {
     "prefix": "andrsrxn",
     "name": "andrsrxn/icons",
-    "total": 2773,
+    "total": 2772,
     "license": "MIT",
     "licenseUrl": "https://github.com/andrsrxn/icons/blob/main/LICENSE",
     "author": "Andrés Raxón",
@@ -54,7 +54,7 @@
   {
     "prefix": "arcticons",
     "name": "Arcticons",
-    "total": 15322,
+    "total": 15459,
     "license": "CC-BY-SA-4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "author": "Donnnno",
@@ -67,7 +67,7 @@
   {
     "prefix": "at-icons",
     "name": "@icons",
-    "total": 642,
+    "total": 705,
     "license": "MIT",
     "licenseUrl": "https://github.com/Voxybuns/at-icons/blob/main/LICENSE",
     "author": "Valentin Fossati",
@@ -223,7 +223,7 @@
   {
     "prefix": "cbi",
     "name": "Custom Brand Icons",
-    "total": 1790,
+    "total": 1806,
     "license": "CC-BY-NC-SA-4.0",
     "licenseUrl": "https://github.com/elax46/custom-brand-icons/blob/main/LICENSE",
     "author": "Emanuele & rchiileea",
@@ -340,7 +340,7 @@
   {
     "prefix": "codex",
     "name": "CodeX Icons",
-    "total": 156,
+    "total": 203,
     "license": "MIT",
     "licenseUrl": "https://github.com/davidabou/icons/blob/master/LICENSE",
     "author": "CodeX",
@@ -366,7 +366,7 @@
   {
     "prefix": "coolicons",
     "name": "coolicons",
-    "total": 19860,
+    "total": 23250,
     "license": "MIT",
     "licenseUrl": "https://github.com/krystonschwarze/coolicons/blob/main/LICENSE",
     "author": "Kryston Schwarze",
@@ -444,7 +444,7 @@
   {
     "prefix": "devicon",
     "name": "Devicon",
-    "total": 1111,
+    "total": 1154,
     "license": "MIT",
     "licenseUrl": "https://github.com/devicons/devicon/blob/master/LICENSE",
     "author": "konpa",
@@ -457,7 +457,7 @@
   {
     "prefix": "devicon-plain",
     "name": "Devicon Plain",
-    "total": 805,
+    "total": 831,
     "license": "MIT",
     "licenseUrl": "https://github.com/devicons/devicon/blob/master/LICENSE",
     "author": "konpa",
@@ -659,6 +659,19 @@
     "authorUrl": "https://github.com/akveo/eva-icons/",
     "multicolor": false,
     "category": "Archive / Unmaintained",
+    "restrictive": false,
+    "bundled": false
+  },
+  {
+    "prefix": "evicons",
+    "name": "EVicons",
+    "total": 84,
+    "license": "MIT",
+    "licenseUrl": "https://github.com/evicons/evicons/blob/main/LICENSE",
+    "author": "Landolsi Digital",
+    "authorUrl": "https://github.com/evicons/evicons",
+    "multicolor": false,
+    "category": "Thematic",
     "restrictive": false,
     "bundled": false
   },
@@ -912,7 +925,7 @@
   {
     "prefix": "fluent",
     "name": "Fluent UI System Icons",
-    "total": 19945,
+    "total": 20015,
     "license": "MIT",
     "licenseUrl": "https://github.com/microsoft/fluentui-system-icons/blob/main/LICENSE",
     "author": "Microsoft Corporation",
@@ -1276,7 +1289,7 @@
   {
     "prefix": "hugeicons",
     "name": "Huge Icons",
-    "total": 6065,
+    "total": 6114,
     "license": "MIT",
     "licenseUrl": "",
     "author": "Hugeicons",
@@ -1523,7 +1536,7 @@
   {
     "prefix": "keyline-icons",
     "name": "Keyline Icons",
-    "total": 13536,
+    "total": 14664,
     "license": "MIT",
     "licenseUrl": "https://github.com/keyline-icons/keyline-icons/blob/main/LICENSE",
     "author": "Keyline Icons",
@@ -1588,7 +1601,7 @@
   {
     "prefix": "logos",
     "name": "SVG Logos",
-    "total": 2064,
+    "total": 2066,
     "license": "CC0-1.0",
     "licenseUrl": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
     "author": "Gil Barbara",
@@ -1614,7 +1627,7 @@
   {
     "prefix": "lucide",
     "name": "Lucide",
-    "total": 2029,
+    "total": 2055,
     "license": "ISC",
     "licenseUrl": "https://github.com/lucide-icons/lucide/blob/main/LICENSE",
     "author": "Lucide Contributors",
@@ -1627,7 +1640,7 @@
   {
     "prefix": "lucide-extended",
     "name": "Lucide Extended",
-    "total": 2879,
+    "total": 2900,
     "license": "ISC",
     "licenseUrl": "https://github.com/applifted/lucide-extended/blob/main/LICENSE",
     "author": "Applifted",
@@ -1731,7 +1744,7 @@
   {
     "prefix": "material-symbols",
     "name": "Material Symbols",
-    "total": 15777,
+    "total": 15810,
     "license": "Apache-2.0",
     "licenseUrl": "https://github.com/google/material-design-icons/blob/master/LICENSE",
     "author": "Google",
@@ -1744,7 +1757,7 @@
   {
     "prefix": "material-symbols-light",
     "name": "Material Symbols Light",
-    "total": 15842,
+    "total": 15875,
     "license": "Apache-2.0",
     "licenseUrl": "https://github.com/google/material-design-icons/blob/master/LICENSE",
     "author": "Google",
@@ -1757,7 +1770,7 @@
   {
     "prefix": "matita",
     "name": "Matita",
-    "total": 302,
+    "total": 383,
     "license": "MIT",
     "licenseUrl": "https://github.com/matita-dev/icons/blob/main/LICENSE",
     "author": "matita.dev",
@@ -2108,7 +2121,7 @@
   {
     "prefix": "pinhead",
     "name": "Pinhead Map Icons",
-    "total": 2832,
+    "total": 2846,
     "license": "CC0-1.0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
     "author": "Quincy Morgan",
@@ -2277,7 +2290,7 @@
   {
     "prefix": "selfhst",
     "name": "selfh.st/icons",
-    "total": 7332,
+    "total": 7344,
     "license": "CC-BY-4.0",
     "licenseUrl": "https://github.com/selfhst/icons/blob/main/LICENSE",
     "author": "selfh.st",
@@ -2303,7 +2316,7 @@
   {
     "prefix": "sidekickicons",
     "name": "SidekickIcons",
-    "total": 500,
+    "total": 644,
     "license": "MIT",
     "licenseUrl": "https://github.com/ndri/sidekickicons/blob/master/LICENSE",
     "author": "Andri Soone",
@@ -2316,7 +2329,7 @@
   {
     "prefix": "simple-icons",
     "name": "Simple Icons",
-    "total": 3467,
+    "total": 3470,
     "license": "CC0-1.0",
     "licenseUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
     "author": "Simple Icons Collaborators",
@@ -2355,7 +2368,7 @@
   {
     "prefix": "solar",
     "name": "Solar",
-    "total": 8706,
+    "total": 9456,
     "license": "CC-BY-4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
     "author": "480 Design",
@@ -2654,7 +2667,7 @@
   {
     "prefix": "struq",
     "name": "Struq Icons",
-    "total": 300,
+    "total": 347,
     "license": "MIT",
     "licenseUrl": "",
     "author": "Struq",
@@ -2706,7 +2719,7 @@
   {
     "prefix": "tabler",
     "name": "Tabler Icons",
-    "total": 6257,
+    "total": 6545,
     "license": "MIT",
     "licenseUrl": "https://github.com/tabler/tabler-icons/blob/master/LICENSE",
     "author": "Paweł Kuna",
@@ -2784,7 +2797,7 @@
   {
     "prefix": "thesvg-color",
     "name": "theSVG Color",
-    "total": 5204,
+    "total": 5215,
     "license": "MIT",
     "licenseUrl": "https://github.com/glincker/thesvg/blob/main/LICENSE",
     "author": "thesvg.org",
@@ -2797,7 +2810,7 @@
   {
     "prefix": "token",
     "name": "Web3 Icons",
-    "total": 1788,
+    "total": 1790,
     "license": "MIT",
     "licenseUrl": "https://github.com/0xa3k5/web3icons/blob/main/LICENCE",
     "author": "0xa3k5",
@@ -2810,7 +2823,7 @@
   {
     "prefix": "token-branded",
     "name": "Web3 Icons Branded",
-    "total": 4085,
+    "total": 4087,
     "license": "MIT",
     "licenseUrl": "https://github.com/0xa3k5/web3icons/blob/main/LICENCE",
     "author": "0xa3k5",
@@ -2912,6 +2925,45 @@
     "bundled": false
   },
   {
+    "prefix": "uix",
+    "name": "UIX Icons Regular",
+    "total": 23322,
+    "license": "MIT",
+    "licenseUrl": "https://github.com/mdrakibshekh/uix-icons/blob/main/LICENSE",
+    "author": "MD Rakib Shekh",
+    "authorUrl": "https://github.com/mdrakibshekh/uix-icons",
+    "multicolor": false,
+    "category": "UI 24px",
+    "restrictive": false,
+    "bundled": false
+  },
+  {
+    "prefix": "uix-sharp",
+    "name": "UIX Icons Sharp",
+    "total": 23322,
+    "license": "MIT",
+    "licenseUrl": "https://github.com/mdrakibshekh/uix-icons/blob/main/LICENSE",
+    "author": "MD Rakib Shekh",
+    "authorUrl": "https://github.com/mdrakibshekh/uix-icons",
+    "multicolor": false,
+    "category": "UI 24px",
+    "restrictive": false,
+    "bundled": false
+  },
+  {
+    "prefix": "uix-solid",
+    "name": "UIX Icons Solid",
+    "total": 23322,
+    "license": "MIT",
+    "licenseUrl": "https://github.com/mdrakibshekh/uix-icons/blob/main/LICENSE",
+    "author": "MD Rakib Shekh",
+    "authorUrl": "https://github.com/mdrakibshekh/uix-icons",
+    "multicolor": false,
+    "category": "UI 24px",
+    "restrictive": false,
+    "bundled": false
+  },
+  {
     "prefix": "unjs",
     "name": "UnJS Logos",
     "total": 63,
@@ -2953,7 +3005,7 @@
   {
     "prefix": "vscode-icons",
     "name": "VSCode Icons",
-    "total": 1719,
+    "total": 1723,
     "license": "MIT",
     "licenseUrl": "https://github.com/vscode-icons/vscode-icons/blob/master/LICENSE",
     "author": "Roberto Huertas",
@@ -3343,7 +3395,7 @@
   {
     "prefix": "wordpress",
     "name": "WordPress Icons",
-    "total": 344,
+    "total": 338,
     "license": "GPL-2.0-or-later",
     "licenseUrl": "https://github.com/WordPress/gutenberg/blob/HEAD/LICENSE.md#gnu-general-public-license-version-2",
     "author": "The WordPress Contributors",

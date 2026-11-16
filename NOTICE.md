@@ -1,6 +1,6 @@
 # Notices
 
-The code in this repository is MIT licensed (`LICENSE`). The icon data is not ours, neither the sets bundled under `crates/nsh-icons/data/sets` nor the ones the CLI downloads: each set keeps its own license, listed below from @iconify/json 2.2.554. An app that ships a set's icons must follow that set's license, including attribution where it asks for it.
+The code in this repository is MIT licensed (`LICENSE`). The icon data is not ours, neither the sets bundled under `crates/nsh-icons/data/sets` nor the ones the CLI downloads: each set keeps its own license, listed below from @iconify/json 2.2.557. An app that ships a set's icons must follow that set's license, including attribution where it asks for it.
 
 - **Academicons** (`academicons`) by James Walsh <https://github.com/jpswalsh/academicons>: OFL-1.1 <https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL>
 - **Akar Icons** (`akar-icons`) by Arturo Wibawa <https://github.com/artcoholic/akar-icons>: MIT <https://github.com/artcoholic/akar-icons/blob/master/LICENSE>
@@ -53,6 +53,7 @@ The code in this repository is MIT licensed (`LICENSE`). The icon data is not ou
 - **Element Plus** (`ep`) by Element Plus <https://github.com/element-plus/element-plus-icons>: MIT <https://github.com/element-plus/element-plus-icons/blob/main/packages/svg/package.json>
 - **Elegant** (`et`) by Kenny Sing <https://github.com/pprince/etlinefont-bower>: GPL-3.0-or-later <https://www.gnu.org/licenses/gpl.html>
 - **Eva Icons** (`eva`) by Akveo <https://github.com/akveo/eva-icons/>: MIT <https://github.com/akveo/eva-icons/blob/master/LICENSE.txt>
+- **EVicons** (`evicons`) by Landolsi Digital <https://github.com/evicons/evicons>: MIT <https://github.com/evicons/evicons/blob/main/LICENSE>
 - **Framework7 Icons** (`f7`) by Vladimir Kharlampidi <https://github.com/framework7io/framework7-icons>: MIT <https://github.com/framework7io/framework7-icons/blob/master/LICENSE>
 - **Font Awesome 4** (`fa`) by Dave Gandy <https://github.com/FortAwesome/Font-Awesome/tree/fa-4>: OFL-1.1 <https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL>
 - **Font Awesome 5 Brands** (`fa-brands`) by Dave Gandy <https://github.com/FortAwesome/Font-Awesome>: CC-BY-4.0 <https://creativecommons.org/licenses/by/4.0/>
@@ -226,6 +227,9 @@ The code in this repository is MIT licensed (`LICENSE`). The icon data is not ou
 - **Unicons Solid** (`uis`) by Iconscout <https://github.com/Iconscout/unicons>: Apache-2.0 <https://github.com/Iconscout/unicons/blob/master/LICENSE>
 - **Unicons Thin Line** (`uit`) by Iconscout <https://github.com/Iconscout/unicons>: Apache-2.0 <https://github.com/Iconscout/unicons/blob/master/LICENSE>
 - **uiw icons** (`uiw`) by liwen0526 <https://github.com/uiwjs/icons>: MIT <https://github.com/uiwjs/icons/blob/master/LICENSE>
+- **UIX Icons Regular** (`uix`) by MD Rakib Shekh <https://github.com/mdrakibshekh/uix-icons>: MIT <https://github.com/mdrakibshekh/uix-icons/blob/main/LICENSE>
+- **UIX Icons Sharp** (`uix-sharp`) by MD Rakib Shekh <https://github.com/mdrakibshekh/uix-icons>: MIT <https://github.com/mdrakibshekh/uix-icons/blob/main/LICENSE>
+- **UIX Icons Solid** (`uix-solid`) by MD Rakib Shekh <https://github.com/mdrakibshekh/uix-icons>: MIT <https://github.com/mdrakibshekh/uix-icons/blob/main/LICENSE>
 - **UnJS Logos** (`unjs`) by UnJS <https://github.com/unjs>: Apache-2.0
 - **Vaadin Icons** (`vaadin`) by Vaadin <https://github.com/vaadin/web-components>: Apache-2.0
 - **Vadivam** (`vadivam`) by Praveen Juge <https://github.com/praveenjuge/vadivam>: MIT <https://github.com/praveenjuge/vadivam/blob/main/LICENSE>
