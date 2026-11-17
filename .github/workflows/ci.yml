@@ -51,7 +51,7 @@ jobs:
           components: clippy
       - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
         with:
-          version: v2.0.0
+          version: v2.1.1
           cache-dir: ${{ runner.temp }}/kache
           manifest-key: rust-${{ matrix.os }}
           cache-key-prefix: kache-rust-${{ matrix.os }}
@@ -81,7 +81,7 @@ jobs:
           toolchain: stable
       - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
         with:
-          version: v2.0.0
+          version: v2.1.1
           cache-dir: ${{ runner.temp }}/kache
           manifest-key: sets-${{ matrix.shard }}
           cache-key-prefix: kache-sets-${{ matrix.shard }}
@@ -112,7 +112,7 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
         with:
-          version: v2.0.0
+          version: v2.1.1
           cache-dir: ${{ runner.temp }}/kache
           manifest-key: check-${{ matrix.target }}
           cache-key-prefix: kache-check-${{ matrix.target }}
@@ -210,7 +210,7 @@ jobs:
           targets: ${{ matrix.target == 'android' && 'aarch64-linux-android' || matrix.target == 'web' && 'wasm32-unknown-unknown' || matrix.target == 'ios-simulator' && 'aarch64-apple-ios-sim' || '' }}
       - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
         with:
-          version: v2.0.0
+          version: v2.1.1
           cache-dir: ${{ runner.temp }}/kache
           manifest-key: demo-${{ matrix.name }}
           cache-key-prefix: kache-demo-${{ matrix.name }}
