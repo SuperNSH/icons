@@ -8,6 +8,25 @@ Icons for [Native Shell](https://nsh.dev) apps, in Rust and in TSX, from every [
 
 `docs/sets.md` lists every set with its icon count and license. `docs/decisions.md` says why it works this way.
 
+## Try the gallery
+
+The gallery in `examples/gallery` browses every bundled set. Open it on the web at https://supernsh.github.io/icons/, or download a build of the latest `master`:
+
+| Platform | Download |
+|---|---|
+| macOS (Apple silicon) | [icons-gallery-macos-arm64.zip](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-macos-arm64.zip) |
+| macOS (Intel) | [icons-gallery-macos-x86_64.zip](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-macos-x86_64.zip) |
+| Linux x86_64 | [icons-gallery-linux-x86_64.tar.gz](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-linux-x86_64.tar.gz) |
+| Linux arm64 | [icons-gallery-linux-arm64.tar.gz](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-linux-arm64.tar.gz) |
+| Windows x86_64 | [icons-gallery-windows-x86_64.zip](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-windows-x86_64.zip) |
+| Windows arm64 | [icons-gallery-windows-arm64.zip](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-windows-arm64.zip) |
+| iOS simulator | [icons-gallery-ios-simulator.zip](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-ios-simulator.zip) |
+| Android (arm64) | [icons-gallery-android.apk](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-android.apk) |
+| Web (static site) | [icons-gallery-web.tar.gz](https://github.com/SuperNSH/icons/releases/latest/download/icons-gallery-web.tar.gz) |
+
+- **macOS:** the app is signed ad hoc, not notarized, and needs macOS 14 or later. macOS quarantines what a browser downloads, so clear that before opening it: `xattr -dr com.apple.quarantine <the unzipped .app>`.
+- **iOS simulator:** an arm64 simulator build, so it needs Xcode with an iOS simulator runtime on an Apple silicon Mac. Unzip it and install it on a booted simulator with `xcrun simctl install booted <the unzipped .app>`, or drag the `.app` onto the simulator window.
+
 ## Rust
 
 35 popular sets are bundled. Turn on the ones you use:
@@ -92,11 +111,11 @@ GitHub Actions does all compiling and testing:
 - Compiles every bundled set's generated module.
 - Runs the CLI's tests under Bun, and the TSX package's and the gallery's under `nsh test`.
 - Checks that the committed data is the pinned release's, and that the gallery's committed files match what the CLI writes.
-- On `master`, packages the gallery in `examples/gallery` for macOS, Linux and Windows on both x86_64 and arm64, plus the iOS simulator, Android and the web, into the `latest` release.
+- On `master`, packages the gallery in `examples/gallery` for macOS, Linux and Windows on both x86_64 and arm64, plus the iOS simulator, Android and the web, and replaces the `latest` release with those nine builds (the downloads in [Try the gallery](#try-the-gallery)).
 - On `master`, deploys the gallery's web build to GitHub Pages at https://supernsh.github.io/icons/ (the repository's name is the site's subpath; NSH's web build uses relative asset paths, so it serves from any).
 
 A weekly workflow moves the pin to the newest `@iconify/json` and opens a pull request.
 
 ## The gallery
 
-`examples/gallery` is an icon explorer over every bundled set, offline: search all 133,000 icon names at once, browse a set with variant chips (`ph`'s `-fill`, `-duotone`...), see an icon's sibling variants, and copy what an app pastes — the Iconify id, the SVG, the `supernsh-icons add` command, a TSX snippet or the Rust constant. `supernsh-icons gallery` writes its data: the set index it commits, and one module of bodies per set, loaded when a set is opened. CI does not compare rendered pixels, so to browse the icons, open a gallery build from the release.
+`examples/gallery` is an icon explorer over every bundled set, offline: search all 133,000 icon names at once, browse a set with variant chips (`ph`'s `-fill`, `-duotone`...), see an icon's sibling variants, and copy what an app pastes — the Iconify id, the SVG, the `supernsh-icons add` command, a TSX snippet or the Rust constant. `supernsh-icons gallery` writes its data: the set index it commits, and one module of bodies per set, loaded when a set is opened. CI does not compare rendered pixels; to browse the icons, see [Try the gallery](#try-the-gallery).
