@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Installs the packaged crate (target/package, from `publish-crates.sh verify`) in a blank app with
-# `nsh add` and type-checks an import of it, as `nsh add supernsh-icons` will once it is on crates.io.
+# Installs the crate in a blank app with `nsh add` and type-checks an import of it. From the checkout,
+# not the package: the package takes its sibling crates from crates.io, where this version is not yet.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-version=$(cargo metadata --no-deps --format-version 1 | jq -er '.packages[] | select(.name == "supernsh-icons") | .version')
-package=$PWD/target/package/supernsh-icons-$version
-[ -d "$package" ] || tar xzf "$package.crate" -C target/package
+package=$PWD/crates/nsh-icons
 
 app=$(mktemp -d)
 cd "$app"
