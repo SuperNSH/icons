@@ -51,6 +51,14 @@ NSH bundles an asset only when the app imports it as an image or a font, and bot
 
 Variants are Iconify names with suffixes (`heart-fill`, `heart-duotone`), not a separate axis, so the demo derives its chips and its sibling grouping by stripping the suffixes sets actually use. `nsh.json` grants the `clipboard` capability for the copy actions; with the key present but empty, NSH would deny the clipboard.
 
+A search with no set open loads no bodies: it lists the sets whose names match, with four of the names to jump to an icon by. That icon's set is the only one it loads.
+
+## The gallery's interface is theme tokens and its own icons
+
+The gallery's screens name tokens and nothing else: shadcn's zinc neutrals with an indigo `primary`, a `warning` for a license that asks for more, a `scrim` for what a sheet covers, and `canvas-light` and `canvas-dark` for the field an icon can be previewed on, whatever the app's appearance. All of them are in `nsh.json`'s `theme`, so the interface follows the appearance and no screen carries a palette color.
+
+The interface's own icons (search, copy, close, sun and moon) are what `supernsh-icons add lucide:search … --out examples/gallery/src/chrome.ts` wrote: the gallery is drawn with the library it shows. The code and export stay what the CLI writes, as the rest of the gallery's files do.
+
 ## No local builds
 
 As in the other SuperNSH repositories, nothing compiles on a developer's machine. CI runs formatting, Clippy and tests on three operating systems, cross-checks iOS, Android and wasm, compiles every bundled set in four shards, runs the CLI's tests under Bun, the TSX package and the gallery under `nsh test`, and on `master` packages the gallery for nine targets into the `latest` release.
