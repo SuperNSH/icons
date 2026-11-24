@@ -36,7 +36,7 @@ import {
   shape,
   typeSize,
 } from "./studio";
-import { closeStudio, isWeb, studioIcon } from "./store";
+import { closeStudio, isWeb, previewFrame, studioIcon } from "./store";
 import { Button, IconButton } from "./ui/button";
 import { ColorStop } from "./ui/color";
 import { License } from "./ui/license";
@@ -227,7 +227,7 @@ export function Studio() {
       {(current) => {
         const icon = current().icon;
         return (
-          <View class="absolute inset-0 flex-col items-center justify-center p-4 pt-[calc(env(safe-area-inset-top)+16px)]">
+          <View class="absolute inset-0 z-50 flex-col items-center justify-center p-4 pt-[calc(env(safe-area-inset-top)+16px)]">
             <View
               testID="studio-backdrop"
               role="button"
@@ -235,11 +235,12 @@ export function Studio() {
               onPress={closeStudio}
               class="absolute inset-0 bg-scrim/50"
             />
-            {/* The card swallows presses, so taps on its quiet spots stay off the backdrop. */}
+            {/* The card swallows presses, so taps on its quiet spots stay off the backdrop. In one
+             * column its body is a scroll view, which gives the card no height of its own. */}
             <View
               testID="studio"
               onPress={() => {}}
-              class="relative flex w-full max-w-4xl max-h-full flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
+              class={`relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl ${twoPane() ? "max-h-full" : "h-full"}`}
             >
               <View class="flex-row items-center gap-3 border-b border-border px-4 py-3">
                 <View class="min-w-0 flex-1 gap-0.5">
@@ -256,7 +257,7 @@ export function Studio() {
                 {() => (
                   <View class="min-h-0 flex-1 flex-row">
                     <View class="w-64 shrink-0 items-center justify-center gap-3 border-e border-border p-4">
-                      <Preview icon={icon} extent={176} />
+                      <Preview icon={icon} extent={176} open={bgMode() === "none"} />
                       <License meta={current().meta} />
                     </View>
                     <Scroll class="min-w-0 flex-1">
@@ -272,7 +273,7 @@ export function Studio() {
                   <Scroll class="min-h-0 flex-1">
                     <View class="gap-5 p-4">
                       <View class="items-center gap-3">
-                        <Preview icon={icon} extent={128} />
+                        <Preview icon={icon} extent={128} open={bgMode() === "none"} />
                         <License meta={current().meta} />
                       </View>
                       <Settings icon={icon} />
@@ -297,10 +298,11 @@ export function Studio() {
   );
 }
 
-/** The file itself, on a card, with what it becomes. */
-function Preview(props: { icon: IconData; extent: number }) {
+/** The file itself, with what it becomes. With no background of its own it
+ * lies on the canvas its ink was chosen for, so the glyph stays in sight. */
+function Preview(props: { icon: IconData; extent: number; open: boolean }) {
   return (
-    <View class="items-center justify-center rounded-xl border border-border bg-card p-4">
+    <View class={`items-center justify-center rounded-xl border p-4 ${props.open ? previewFrame() : "border-border bg-card"}`}>
       <Image testID="studio-preview" src={previewSource(props.icon)} style={{ width: props.extent, height: props.extent }} accessibilityLabel="Export preview" />
       <Text class="mt-2 text-center text-xs leading-5 text-muted-foreground">{caption(props.icon)}</Text>
     </View>

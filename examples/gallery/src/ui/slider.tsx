@@ -4,8 +4,8 @@ import { Text, View } from "nsh";
 import { Slider } from "nsh/base";
 import { TOUCH } from "./theme";
 
-/** The track is taller than it looks: it is where a finger lands. */
-export const sliderTrack = TOUCH ? "h-11 justify-center" : "h-6 justify-center";
+/** The track fills the slider's row, and is taller than it looks: it is where a finger lands. */
+export const sliderTrack = TOUCH ? "h-11 flex-1 justify-center" : "h-6 flex-1 justify-center";
 export const sliderIndicator = "h-1.5 rounded-full bg-muted";
 export const sliderRange = "rounded-full bg-primary";
 export const sliderThumb = "size-4 rounded-full border border-border bg-background shadow-sm focus-visible:ring-2 focus-visible:ring-ring";
@@ -37,7 +37,7 @@ export function SliderField(props: {
         onChange={(event) => {
           if (typeof event.value === "number") props.onChange(event.value);
         }}
-        class="w-full"
+        class="w-full flex-row items-center gap-2"
         trackClass={sliderTrack}
         indicatorClass={sliderIndicator}
         rangeClass={sliderRange}

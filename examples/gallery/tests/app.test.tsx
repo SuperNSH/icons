@@ -56,6 +56,8 @@ test("a set with weights gets its variant chips, and global search lists the set
   await app.waitFor("id:card-ph");
   await app.press("id:card-ph");
   await app.waitFor("id:suffix-fill");
+  // The sidebar virtualizes: Phosphor's row, 27 sets down, renders only once the list scrolled to it.
+  await app.waitFor("id:set-ph");
   await app.type("id:search", "heart");
   await app.press("id:suffix-fill");
   await app.waitFor("id:tile-ph-heart-fill");

@@ -14,9 +14,9 @@ const SUFFIXES = ["bold", "bulk", "duotone", "fill", "filled", "light", "line", 
 /** Tints one tap picks. */
 const PRESETS = ["#4f46e5", "#dc2626", "#16a34a", "#f59e0b", "#0ea5e9"];
 const RESULT_CAP = 3000;
-/** The panes beside the stage, as wide as their `w-64` and `w-80` classes. */
+/** The panes beside the stage, as wide as their `w-64` and `w-96` classes. */
 const SIDEBAR_WIDTH = 256;
-const DETAIL_WIDTH = 320;
+const DETAIL_WIDTH = 384;
 /** The lists' `p-3` on both sides. */
 const STAGE_PADDING = 24;
 
@@ -172,6 +172,8 @@ export const narrow = computed(() => windowSize().width < 900);
 export const wide = computed(() => windowSize().width >= 1200);
 /** Room for a control's label beside it. */
 export const roomy = computed(() => windowSize().width >= 640);
+/** Below this the toolbar's controls take a row of their own under the search. */
+export const toolbarRows = computed(() => windowSize().width < 1100);
 const stageWidth = computed(() => windowSize().width - (narrow() ? 0 : SIDEBAR_WIDTH) - (wide() && pickedSet() ? DETAIL_WIDTH : 0));
 /** Icons to a row: as many as fit at 104 points, the room a 16-character name needs. */
 export const columns = computed(() => Math.max(3, Math.floor((stageWidth() - STAGE_PADDING) / 104)));

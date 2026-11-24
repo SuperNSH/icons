@@ -1,7 +1,7 @@
 // The icon explorer: every bundled set's icons, searchable, with variant
 // filters, sibling variants, and the snippets an app pastes. The data is
 // `supernsh-icons gallery`'s: src/demo-index.ts for names, src/data/ for bodies.
-import { effect, keymap, List, mount, platform, Scroll, Text, View, WebView, token, type InputRef } from "nsh";
+import { effect, keymap, List, mount, platform, Scroll, Text, View, WebView, token, type InputRef, type ListRef } from "nsh";
 import { Button as Pressable, ColorSwatch, Input, Popover, Slider } from "nsh/base";
 import { Glyph, Icon, type IconData } from "supernsh-icons";
 import {
@@ -72,6 +72,7 @@ import {
   surface,
   tiles,
   tintPicked,
+  toolbarRows,
   total,
   tsSnippet,
   wide,
@@ -136,6 +137,8 @@ addEventListener("message", (event) => {
 </script></body></html>`;
 
 let searchRef: InputRef | null = null;
+/** The sidebar's list of sets, so the one just entered can be brought into view. */
+let setList: ListRef | null = null;
 
 /** A sidebar row: quiet until hovered, tinted while it is the current set. */
 function navRow(selected: boolean) {
@@ -157,6 +160,13 @@ function Thumbnail(props: { meta: DemoSet }) {
 }
 
 function Sidebar() {
+  // A set picked in the sidebar is in view already; one picked on the home grid need not be.
+  let wasInSet = false;
+  effect(() => {
+    const meta = currentSet();
+    if (meta && !wasInSet) setList?.scrollToIndex({ index: SETS.findIndex((set) => set.prefix === meta.prefix), viewPosition: 0.5 });
+    wasInSet = meta !== null;
+  });
   return (
     <View class="w-64 shrink-0 gap-3 border-e border-sidebar-border bg-sidebar p-3 pt-[calc(env(safe-area-inset-top)+12px)] text-sidebar-foreground">
       <View class="gap-0.5 px-2">
@@ -170,16 +180,14 @@ function Sidebar() {
           </View>
           <Text class="flex-1 text-sm">All sets</Text>
         </Pressable>
-        <Scroll class="min-h-0 flex-1" contentClass="gap-1">
-          <Each of={SETS} key={(meta) => meta.prefix}>
-            {(meta) => (
-              <Pressable testID={`set-${meta().prefix}`} onPress={() => openSet(meta())} class={`${navRow(currentSet()?.prefix === meta().prefix)} ${focus}`}>
-                <Thumbnail meta={meta()} />
-                <Text class="line-clamp-1 min-w-0 flex-1 text-sm">{meta().name}</Text>
-              </Pressable>
-            )}
-          </Each>
-        </Scroll>
+        <List ref={(node) => (setList = node)} each={SETS} keyExtractor={(meta) => meta.prefix} estimatedItemSize={52} class="min-h-0 flex-1" contentClass="gap-1">
+          {(meta) => (
+            <Pressable testID={`set-${meta().prefix}`} onPress={() => openSet(meta())} class={`${navRow(currentSet()?.prefix === meta().prefix)} ${focus}`}>
+              <Thumbnail meta={meta()} />
+              <Text class="line-clamp-1 min-w-0 flex-1 text-sm">{meta().name}</Text>
+            </Pressable>
+          )}
+        </List>
       </View>
       <Text class="px-2 text-xs text-muted-foreground">{`@iconify/json ${VERSION}`}</Text>
     </View>
@@ -215,36 +223,37 @@ function CopyRow(props: { icon: IconData }) {
   );
 }
 
-function Toolbar() {
+/** The search over every icon name, with the shortcut that brings it back. */
+function SearchField(props: { floor: boolean }) {
   return (
-    <View class="flex-row flex-wrap items-center gap-2 p-3">
-      <If when={narrow()}>
-        <Button testID="sets-button" size={control} onPress={openSidebar} class="gap-1.5">
-          <Icon icon={lucideLayoutGrid} size={14} />
-          <Text>Sets</Text>
-        </Button>
+    <View class={`${props.floor ? "min-w-56" : "min-w-0"} flex-1 flex-row items-center gap-2 rounded-(--radius) border border-input bg-card pe-1 ps-3 ${TOUCH ? "min-h-10" : "min-h-8"} focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30`}>
+      <Icon icon={lucideSearch} size={16} color={token("muted-foreground")} />
+      <Input
+        testID="search"
+        ref={(node) => (searchRef = node)}
+        value={queryText()}
+        onChange={(event) => setQuery(event.value)}
+        accessibilityLabel="Search icons"
+        placeholder={`Search ${total.toLocaleString()} icons`}
+        class="min-w-0 flex-1 py-1.5 text-sm text-foreground"
+      />
+      <If when={DESKTOP && !queryText()}>
+        <Text class="rounded border border-border bg-muted px-1 font-mono text-xs text-muted-foreground">{keymap.label("mod+k")}</Text>
       </If>
-      <View class={`min-w-56 flex-1 flex-row items-center gap-2 rounded-(--radius) border border-input bg-card pe-1 ps-3 ${TOUCH ? "min-h-10" : "min-h-8"} focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30`}>
-        <Icon icon={lucideSearch} size={16} color={token("muted-foreground")} />
-        <Input
-          testID="search"
-          ref={(node) => (searchRef = node)}
-          value={queryText()}
-          onChange={(event) => setQuery(event.value)}
-          accessibilityLabel="Search icons"
-          placeholder={`Search ${total.toLocaleString()} icons`}
-          class="min-w-0 flex-1 py-1.5 text-sm text-foreground"
-        />
-        <If when={DESKTOP && !queryText()}>
-          <Text class="rounded border border-border bg-muted px-1 font-mono text-xs text-muted-foreground">{keymap.label("mod+k")}</Text>
-        </If>
-        <If when={queryText()}>
-          <IconButton testID="search-clear" size="sm" label="Clear search" onPress={clearSearch}>
-            <Icon icon={lucideX} size={16} />
-          </IconButton>
-        </If>
-      </View>
-      <View class={`flex-row items-center gap-2${roomy() ? "" : " min-w-0 flex-1"}`}>
+      <If when={queryText()}>
+        <IconButton testID="search-clear" size="sm" label="Clear search" onPress={clearSearch}>
+          <Icon icon={lucideX} size={16} />
+        </IconButton>
+      </If>
+    </View>
+  );
+}
+
+/** Size, tint and canvas: after the search where the window is wide, else a row of their own. */
+function Controls(props: { own: boolean }) {
+  return (
+    <View class={`flex-row items-center gap-2${props.own ? " min-w-0 flex-1" : ""}`}>
+      <View class={props.own ? "min-w-0 flex-1 flex-row items-center gap-2" : "flex-row items-center gap-2"}>
         <If when={roomy()}>
           <Text class="text-xs text-muted-foreground">Size</Text>
         </If>
@@ -258,7 +267,7 @@ function Toolbar() {
           onChange={(event) => {
             if (typeof event.value === "number") setSize(event.value);
           }}
-          class={roomy() ? "w-40" : "min-w-28 flex-1"}
+          class={props.own ? "min-w-28 flex-1 flex-row items-center gap-2" : "w-40 flex-row items-center gap-2"}
           trackClass={sliderTrack}
           indicatorClass={sliderIndicator}
           rangeClass={sliderRange}
@@ -275,7 +284,10 @@ function Toolbar() {
             accessibilityLabel="Tint"
             class={`flex-row items-center gap-1.5 rounded-(--radius) border border-border bg-card px-3 ${TOUCH ? "min-h-10 py-2 text-sm" : "min-h-8 py-1 text-xs"} font-medium text-foreground hover:bg-muted active:bg-muted ${focus}`}
           >
-            <View class="size-4 rounded-full" style={{ backgroundColor: ink() }} />
+            {/* The ink sits in a ring: a light one would vanish into the button. */}
+            <View class="size-4 items-center justify-center rounded-full border border-border">
+              <View class="size-2.5 rounded-full" style={{ backgroundColor: ink() }} />
+            </View>
             <If when={roomy()}>
               <Text>Tint</Text>
             </If>
@@ -330,6 +342,28 @@ function Toolbar() {
           { id: "dark", label: roomy() ? "Dark" : "", accessibilityLabel: "Dark canvas", icon: <Icon icon={lucideMoon} size={14} /> },
         ]}
       />
+    </View>
+  );
+}
+
+function Toolbar() {
+  return (
+    <View class="gap-2 p-3">
+      <View class="flex-row items-center gap-2">
+        <If when={narrow()}>
+          <Button testID="sets-button" size={control} onPress={openSidebar} class="gap-1.5">
+            <Icon icon={lucideLayoutGrid} size={14} />
+            <Text>Sets</Text>
+          </Button>
+        </If>
+        <SearchField floor={!toolbarRows()} />
+        <If when={!toolbarRows()}>
+          {() => <Controls own={false} />}
+        </If>
+      </View>
+      <If when={toolbarRows()}>
+        {() => <Controls own={true} />}
+      </If>
     </View>
   );
 }
@@ -409,7 +443,7 @@ function Home() {
 /** Global search: each set with matches, and names to jump straight to an icon. */
 function GlobalHits() {
   return (
-    <List testID="hits" each={setHits()} keyExtractor={(hit) => hit.meta.prefix} estimatedItemSize={112} contentClass="gap-2 p-3" class="flex-1">
+    <List testID="hits" each={setHits()} keyExtractor={(hit) => hit.meta.prefix} estimatedItemSize={98} contentClass="gap-2 p-3" class="flex-1">
       {(hit) => (
         <View class="gap-1 rounded-xl border border-border bg-card p-2">
           <Pressable
@@ -500,7 +534,10 @@ function Grid() {
           {(row) => (
             <Pressable
               testID={`tile-${row().meta.prefix}-${row().name}`}
-              onPress={() => openIcon(row().meta, row().name)}
+              onPress={() => {
+                searchRef?.blur();
+                openIcon(row().meta, row().name);
+              }}
               selected={isActive(row().meta.prefix, row().name)}
               class={`items-center gap-1.5 rounded-lg p-2 ${surface().hover} active:bg-primary/20 ${focus}`}
               classList={{ "bg-primary/15": isActive(row().meta.prefix, row().name) }}
@@ -680,7 +717,7 @@ function App() {
       </View>
       <If when={wide() && !!currentSet()} else={<DetailSheet />}>
         {() => (
-          <View class="w-80 shrink-0 flex-col border-s border-border">
+          <View class="w-96 shrink-0 flex-col border-s border-border">
             <Detail />
           </View>
         )}
