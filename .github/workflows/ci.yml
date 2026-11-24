@@ -160,6 +160,7 @@ jobs:
         # The same run writes src/data/ (gitignored) that the next step tests with.
         run: |
           node ../../packages/nsh-icons/cli/nsh-icons.ts gallery
+          node ../../packages/nsh-icons/cli/nsh-icons.ts add --out src/chrome.ts
           git diff --exit-code -- .
       - name: The gallery, checked and tested
         working-directory: examples/gallery
