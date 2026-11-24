@@ -2112,7 +2112,22 @@ dependencies = [
  "nsh-engine",
  "nsh-icons-codegen",
  "nsh-testing",
+ "supernsh-icons-data-1",
+ "supernsh-icons-data-2",
+ "supernsh-icons-data-3",
 ]
+
+[[package]]
+name = "supernsh-icons-data-1"
+version = "0.1.0"
+
+[[package]]
+name = "supernsh-icons-data-2"
+version = "0.1.0"
+
+[[package]]
+name = "supernsh-icons-data-3"
+version = "0.1.0"
 
 [[package]]
 name = "svgtypes"

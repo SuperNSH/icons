@@ -11,3 +11,7 @@ Hard rules for humans and coding agents in this repo.
 - Generated files are never edited by hand: `crates/nsh-icons/data`, the crate's feature list, `docs/sets.md`, `NOTICE.md` come from `tools/fetch-data.ts`; the gallery's committed files (`examples/gallery/src/demo-index.ts`, `src/icon-font.ts`, `assets/`) come from the CLI's `gallery` command, which also writes the gitignored `examples/gallery/src/data/` in CI, and `examples/gallery/src/chrome.ts`, the interface's own icons, comes from `supernsh-icons add`.
 - Each icon set keeps its own license. A new bundled set needs a license that lets apps ship it.
 - The main branch is `master`.
+
+## Releasing
+
+Bump the version in `Cargo.toml` and `packages/*/package.json` together, add the CHANGELOG entry, push, then tag `vX.Y.Z`. The Publish crates workflow uploads to crates.io once CI has passed on the tagged commit. A crates.io version cannot be replaced, so push the tag only when the release is final. To retry: `gh workflow run publish.yml -f tag=vX.Y.Z`.

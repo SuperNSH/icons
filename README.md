@@ -8,6 +8,18 @@ Icons for [Native Shell](https://nsh.dev) apps, in Rust and in TSX, from every [
 
 `docs/sets.md` lists every set with its icon count and license. `docs/decisions.md` says why it works this way.
 
+## Install
+
+In the app's directory:
+
+```sh
+nsh add supernsh-icons
+```
+
+`nsh add` needs NSH main or the nightly: the 0.6.0 and 0.6.1 releases do not have it. In a Rust app, `cargo add supernsh-icons` works with any of them.
+
+The TSX imports are `supernsh-icons`, `supernsh-icons/markup` and `supernsh-icons/iconify`. `nsh-icons-codegen` is the generator the crate's build script runs. An app does not add it; `cargo add nsh-icons-codegen` is for tools that turn Iconify JSON into Rust.
+
 ## Try the gallery
 
 The gallery in `examples/gallery` browses every bundled set. Open it on the web at https://supernsh.github.io/icons/, or download a build of the latest `master`:
@@ -33,7 +45,7 @@ The gallery in `examples/gallery` browses every bundled set. Open it on the web 
 
 ```toml
 [dependencies]
-supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["lucide", "logos"] }
+supernsh-icons = { version = "0.1", features = ["lucide", "logos"] }
 ```
 
 ```rust
@@ -50,7 +62,7 @@ The bundled sets are `akar-icons`, `ant-design`, `bi`, `bx`, `carbon`, `circle-f
 
 ## TSX
 
-Add the package from `packages/nsh-icons` to the app's `node_modules`, then write the icons you use into a file:
+After `nsh add supernsh-icons` (or with the package from `packages/nsh-icons` in the app's `node_modules`, which also brings the CLI), write the icons you use into a file:
 
 ```sh
 npx supernsh-icons add lucide:heart ph:star-fill logos:github-icon --out src/icons.ts

@@ -5,12 +5,12 @@
 use std::{env, fmt::Write as _, fs, path::PathBuf};
 
 fn main() {
-    let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("data/sets");
-    println!("cargo:rerun-if-changed=data/sets");
-    let mut files: Vec<PathBuf> = fs::read_dir(&dir)
-        .unwrap_or_else(|e| panic!("{}: {e}", dir.display()))
-        .map(|entry| entry.unwrap().path())
-        .collect();
+    let mut files = Vec::new();
+    for dir in set_dirs() {
+        println!("cargo:rerun-if-changed={}", dir.display());
+        let entries = fs::read_dir(&dir).unwrap_or_else(|e| panic!("{}: {e}", dir.display()));
+        files.extend(entries.map(|entry| entry.unwrap().path()));
+    }
     files.sort();
 
     let mut out = String::new();
@@ -52,4 +52,22 @@ fn main() {
     );
     let target = PathBuf::from(env::var("OUT_DIR").unwrap()).join("sets.rs");
     fs::write(&target, out).unwrap_or_else(|e| panic!("{}: {e}", target.display()));
+}
+
+/// The repository's own sets, or in a published crate those of the data crates turned on. The
+/// data crates link to the repository's files, and a Windows checkout has no links.
+fn set_dirs() -> Vec<PathBuf> {
+    let local = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("data/sets");
+    if local.is_dir() {
+        return vec![local];
+    }
+    let dirs: &[&str] = &[
+        #[cfg(feature = "data-1")]
+        supernsh_icons_data_1::DIR,
+        #[cfg(feature = "data-2")]
+        supernsh_icons_data_2::DIR,
+        #[cfg(feature = "data-3")]
+        supernsh_icons_data_3::DIR,
+    ];
+    dirs.iter().map(PathBuf::from).collect()
 }

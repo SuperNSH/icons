@@ -1,0 +1,15 @@
+[package]
+name = "supernsh-icons-data-3"
+description = "Icon data for supernsh-icons: gzipped Iconify JSON, part 3 of 3. Not for direct use."
+version.workspace = true
+edition.workspace = true
+# The icon sets keep their own licenses; NOTICE.md lists them.
+license-file = "NOTICE.md"
+repository.workspace = true
+authors.workspace = true
+readme = "../../README.md"
+keywords = ["nsh", "icons", "iconify"]
+include = ["src/**", "sets/**", "Cargo.toml", "NOTICE.md"]
+
+[lib]
+name = "supernsh_icons_data_3"

@@ -4,7 +4,8 @@
 set -euo pipefail
 shard="$1"
 count="$2"
-sets=$(sed -n '/# BEGIN GENERATED SETS/,/# END GENERATED SETS/p' crates/nsh-icons/Cargo.toml | grep ' = \[\]' | cut -d' ' -f1)
+sets=$(sed -n '/# BEGIN GENERATED SETS/,/# END GENERATED SETS/p' crates/nsh-icons/Cargo.toml | grep ' = \[' | cut -d' ' -f1)
+[ -n "$sets" ] || { echo "no sets found in crates/nsh-icons/Cargo.toml" >&2; exit 1; }
 i=0
 for set in $sets; do
   if [ $((i % count)) -eq "$shard" ]; then

@@ -1,12 +1,12 @@
 // Downloads the pinned @iconify/json release and writes what the repo commits:
 // a gzipped Iconify JSON per bundled set, the manifest of every set, the
-// crate's feature list, docs/sets.md and NOTICE.md.
+// crate's feature list, the data crates' links, docs/sets.md and NOTICE.md.
 // Usage: bun tools/fetch-data.ts [version]
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { untgz } from "../packages/nsh-icons/cli/tar.ts";
-import { BUNDLED } from "./sets.ts";
+import { BUNDLED, DATA_CRATES, dataCrate } from "./sets.ts";
 
 const root = join(import.meta.dir, "..");
 const dataDir = join(root, "crates/nsh-icons/data");
@@ -87,6 +87,7 @@ async function main() {
   await writeFile(pinFile, `${version}\n`);
   await writeFile(join(dataDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFeatures(manifest);
+  await writeDataCrates();
   await writeDocs(manifest, version);
   console.log(`@iconify/json ${version}: ${manifest.length} sets, ${manifest.reduce((n, s) => n + s.total, 0)} icons`);
 }
@@ -105,12 +106,30 @@ async function writeFeatures(manifest: ManifestEntry[]) {
   const toml = await readFile(path, "utf8");
   const begin = "# BEGIN GENERATED SETS (tools/fetch-data.ts)";
   const end = "# END GENERATED SETS";
-  const lines = manifest.filter((s) => s.bundled).map((s) => `${s.prefix} = []`);
+  const lines = manifest.filter((s) => s.bundled).map((s) => `${s.prefix} = ["data-${dataCrate(s.prefix)}"]`);
   const from = toml.indexOf(begin);
   const to = toml.indexOf(end);
   if (from < 0 || to < from) throw new Error(`${path}: no generated block markers`);
   const next = `${toml.slice(0, from)}${begin}\n${lines.join("\n")}\n${toml.slice(to)}`;
   await writeFile(path, next);
+}
+
+// crates.io's limit is 10 MB for a whole crate; the sets are already compressed.
+const DATA_CRATE_LIMIT = 9_500_000;
+
+/** Links each data crate's sets to the files in crates/nsh-icons/data: cargo packages what a link names. */
+async function writeDataCrates() {
+  for (const [n, sets] of Object.entries(DATA_CRATES)) {
+    const dir = join(root, `crates/nsh-icons-data-${n}/sets`);
+    await rm(dir, { recursive: true, force: true });
+    await mkdir(dir, { recursive: true });
+    let size = 0;
+    for (const prefix of sets) {
+      size += (await stat(join(dataDir, "sets", `${prefix}.json.gz`))).size;
+      await symlink(`../../nsh-icons/data/sets/${prefix}.json.gz`, join(dir, `${prefix}.json.gz`));
+    }
+    if (size > DATA_CRATE_LIMIT) throw new Error(`supernsh-icons-data-${n} is ${size} bytes: move its newest sets to another data crate in tools/sets.ts`);
+  }
 }
 
 async function writeDocs(manifest: ManifestEntry[], version: string) {
