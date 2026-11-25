@@ -93,7 +93,7 @@ supernsh-icons.workspace = true
 
 export function nshJson(set: SetMeta, version: string): string {
   const name = crateName(set.prefix);
-  return `${JSON.stringify({ nsh: ">=0.7", exports: { [name]: "tsx/index.ts" }, dependencies: { "supernsh-icons": `^${version}` } }, null, 2)}\n`;
+  return `${JSON.stringify({ nsh: ">=0.7.1", exports: { [name]: "tsx/index.ts" }, dependencies: { "supernsh-icons": `^${version}` } }, null, 2)}\n`;
 }
 
 export function libRs(set: SetMeta): string {

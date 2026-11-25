@@ -24,7 +24,7 @@ authors = ["hmziqrs"]
 
 [workspace.dependencies]
 supernsh-icons = { path = ".", version = "0.2.0" }
-nsh-core = "0.7.0"
+nsh-core = "0.7.1"
 
 [lib]
 name = "supernsh_icons"
@@ -35,7 +35,7 @@ nsh-core = { workspace = true, features = ["svg"] }
 
 [dev-dependencies]
 nsh-core = { workspace = true, features = ["declarations"] }
-nsh-engine = { version = "0.7.0", default-features = false }
-nsh-testing = { version = "0.7.0", default-features = false }
+nsh-engine = { version = "0.7.1", default-features = false }
+nsh-testing = { version = "0.7.1", default-features = false }
 supernsh-icons-logos = { path = "sets/logos" }
 supernsh-icons-lucide = { path = "sets/lucide" }
