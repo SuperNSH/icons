@@ -1,0 +1,29 @@
+{
+  "name": "supernsh-icons-cli",
+  "version": "0.1.0",
+  "description": "Writes only the icons an NSH app uses, from any Iconify set, as SVG data or an icon font. Run it from a checkout.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "supernsh-icons": "./nsh-icons.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "svg2ttf": "6.1.0",
+    "svgicons2svgfont": "16.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@types/node": "26.6.6",
+    "@types/svg2ttf": "5.0.3",
+    "typescript": "7.0.2"
+  },
+  "repository": "https://github.com/SuperNSH/icons",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc"
+  },
+  "private": true
+}

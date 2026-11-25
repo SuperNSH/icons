@@ -1,0 +1,14 @@
+[package]
+name = "supernsh-icons-circle-flags"
+description = "Circle Flags icons for Native Shell (NSH) apps, in Rust and TSX, drawn by supernsh-icons"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+repository.workspace = true
+authors.workspace = true
+keywords = ["nshm", "nsh", "icons", "iconify", "svg"]
+include = ["/Cargo.toml", "/NOTICE.md", "/nsh.json", "/src/**", "/tsx/**"]
+
+[dependencies]
+nsh-core.workspace = true
+supernsh-icons.workspace = true

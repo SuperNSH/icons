@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # In dependency order.
-CRATES=(nsh-icons-codegen supernsh-icons-data-1 supernsh-icons-data-2 supernsh-icons-data-3 supernsh-icons)
+CRATES=(supernsh-icons supernsh-icons-akar-icons supernsh-icons-ant-design supernsh-icons-bi supernsh-icons-bx supernsh-icons-carbon supernsh-icons-circle-flags supernsh-icons-codicon supernsh-icons-devicon supernsh-icons-fa7-brands supernsh-icons-fa7-regular supernsh-icons-fa7-solid supernsh-icons-fe supernsh-icons-flag supernsh-icons-fluent supernsh-icons-heroicons supernsh-icons-hugeicons supernsh-icons-iconoir supernsh-icons-ion supernsh-icons-line-md supernsh-icons-logos supernsh-icons-lucide supernsh-icons-majesticons supernsh-icons-material-symbols supernsh-icons-mdi supernsh-icons-mingcute supernsh-icons-mynaui supernsh-icons-octicon supernsh-icons-ph supernsh-icons-radix-icons supernsh-icons-ri supernsh-icons-simple-icons supernsh-icons-solar supernsh-icons-streamline supernsh-icons-svg-spinners supernsh-icons-tabler)
 TRIES=${TRIES:-30}
 WAIT=${WAIT:-10}
 # crates.io takes one new crate every ten minutes after the first few.
@@ -45,8 +45,7 @@ verify() {
   local crate args=()
   for crate in "${CRATES[@]}"; do args+=(-p "$crate"); done
   # Together, so that a crate can build against the packaged version of another.
-  # With a set of each data crate on, so that the packaged crate reads all three.
-  cargo package ${LOCKED[@]+"${LOCKED[@]}"} "${args[@]}" --features supernsh-icons/lucide,supernsh-icons/logos,supernsh-icons/fluent,supernsh-icons/solar
+  cargo package ${LOCKED[@]+"${LOCKED[@]}"} "${args[@]}"
 }
 
 # `verify` built the package in a step without the token; --no-verify keeps build scripts away from it.

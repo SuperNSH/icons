@@ -1,6 +1,6 @@
 # Notices
 
-The code in this repository is MIT licensed (`LICENSE`). The icon data is not ours, neither the sets bundled under `crates/nsh-icons/data/sets` nor the ones the CLI downloads: each set keeps its own license, listed below from @iconify/json 2.2.554. An app that ships a set's icons must follow that set's license, including attribution where it asks for it.
+The code in this repository is MIT licensed (`LICENSE`). The icon data is not ours, neither the sets under `sets` nor the ones the CLI downloads: each set keeps its own license, listed below from @iconify/json 2.2.554. An app that ships a set's icons must follow that set's license, including attribution where it asks for it.
 
 - **Academicons** (`academicons`) by James Walsh <https://github.com/jpswalsh/academicons>: OFL-1.1 <https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL>
 - **Akar Icons** (`akar-icons`) by Arturo Wibawa <https://github.com/artcoholic/akar-icons>: MIT <https://github.com/artcoholic/akar-icons/blob/master/LICENSE>

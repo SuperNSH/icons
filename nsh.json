@@ -1,0 +1,7 @@
+{
+  "nsh": ">=0.7",
+  "exports": {
+    "supernsh-icons/markup": "tsx/markup.ts",
+    "supernsh-icons/iconify": "tsx/iconify.ts"
+  }
+}
