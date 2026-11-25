@@ -1,0 +1,9 @@
+{
+  "nsh": ">=0.7",
+  "exports": {
+    "supernsh-icons-fa7-regular": "tsx/index.ts"
+  },
+  "dependencies": {
+    "supernsh-icons": "^0.1.0"
+  }
+}

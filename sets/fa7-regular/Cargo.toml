@@ -1,0 +1,14 @@
+[package]
+name = "supernsh-icons-fa7-regular"
+description = "Font Awesome Regular icons for Native Shell (NSH) apps, in Rust and TSX, drawn by supernsh-icons"
+version.workspace = true
+edition.workspace = true
+license = "CC-BY-4.0"
+repository.workspace = true
+authors.workspace = true
+keywords = ["nshm", "nsh", "icons", "iconify", "svg"]
+include = ["/Cargo.toml", "/NOTICE.md", "/nsh.json", "/src/**", "/tsx/**"]
+
+[dependencies]
+nsh-core.workspace = true
+supernsh-icons.workspace = true

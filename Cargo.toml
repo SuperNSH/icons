@@ -1,10 +1,41 @@
-[workspace]
-members = ["crates/nsh-icons", "crates/nsh-icons-codegen", "crates/nsh-icons-data-1", "crates/nsh-icons-data-2", "crates/nsh-icons-data-3"]
-resolver = "3"
-
-[workspace.package]
+[package]
+name = "supernsh-icons"
+description = "Icons for Native Shell (NSH) apps, in Rust and TSX: one Icon component, icon-font glyphs, and a crate per Iconify set"
+# Not inherited: `nsh add --path` reads the version here.
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/SuperNSH/icons"
 authors = ["hmziqrs"]
+readme = "README.md"
+keywords = ["nshm", "nsh", "icons", "iconify", "svg"]
+include = ["/Cargo.toml", "/LICENSE", "/NOTICE.md", "/README.md", "/nsh.json", "/src/**", "/tsx/**"]
+
+[workspace]
+members = ["sets/*"]
+exclude = ["examples"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+repository = "https://github.com/SuperNSH/icons"
+authors = ["hmziqrs"]
+
+[workspace.dependencies]
+supernsh-icons = { path = ".", version = "0.1.0" }
+nsh-core = "0.7.0"
+
+[lib]
+name = "supernsh_icons"
+
+[dependencies]
+# Icons are SVG: without the feature the native backends draw nothing for them.
+nsh-core = { workspace = true, features = ["svg"] }
+
+[dev-dependencies]
+nsh-core = { workspace = true, features = ["declarations"] }
+nsh-engine = { version = "0.7.0", default-features = false }
+nsh-testing = { version = "0.7.0", default-features = false }
+supernsh-icons-logos = { path = "sets/logos" }
+supernsh-icons-lucide = { path = "sets/lucide" }
