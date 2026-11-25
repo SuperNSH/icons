@@ -2,8 +2,9 @@
 // are tinted, sized and drawn. The signals are this module's own; the
 // functions and accessors below are the only way in.
 import { Clipboard, announce, computed, platform, signal, token, windowSize, type WebViewRef } from "nsh";
-import { type IconData, svgMarkup } from "supernsh-icons";
-import { rustName, tsName } from "supernsh-icons/iconify";
+import type { IconData } from "supernsh-icons";
+import { rustConst, tsName } from "supernsh-icons/iconify";
+import { svgMarkup } from "supernsh-icons/markup";
 import { SETS, type DemoSet } from "./demo-index";
 import { LAZY } from "./data/index";
 import { toast } from "./ui/toast";
@@ -271,17 +272,16 @@ export function closeStudio() {
   studioOpen.set(false);
 }
 
-/** The TSX an app pastes: the CLI's named export and the `<Icon>` call. */
+/** The TSX an app pastes: the set's export and the `<Icon>` call. */
 export function tsSnippet(icon: IconData): string {
-  const ident = tsName(icon.set, icon.name);
-  return `import { Icon } from "supernsh-icons";\nimport { ${ident} } from "./src/icons";\n\n<Icon icon={${ident}} size={${size()}${tint() ? ` color="${tint()}"` : ""} label="${baseName(icon.name)}" />`;
+  const ident = SETS.find((set) => set.prefix === icon.set)?.renamed[icon.name] ?? tsName(icon.set, icon.name);
+  return `import { Icon } from "supernsh-icons";\nimport { ${ident} } from "supernsh-icons-${icon.set}";\n\n<Icon icon={${ident}} size={${size()}}${tint() ? ` color="${tint()}"` : ""} label="${baseName(icon.name)}" />`;
 }
 
-/** The Rust an app pastes: the Cargo feature, the module's constant, the call. */
+/** The Rust an app pastes: the set's constant and the `icon` call. */
 export function rustSnippet(icon: IconData): string {
-  const constant = rustName(icon.set, icon.name);
   const module = icon.set.replace(/-/g, "_");
-  return `// Cargo.toml: supernsh-icons = { git = "https://github.com/SuperNSH/icons", features = ["${icon.set}"] }\nuse supernsh_icons::{icon, ${module}};\n\nicon(${module}::${constant}).size(px(${size()}.0))`;
+  return `use supernsh_icons::icon;\nuse supernsh_icons_${module} as ${module};\n\nicon(${module}::${rustConst(icon.name)}).size(px(${size()}.0))`;
 }
 
 /** The id of the control whose copy just landed, while its label says so. */
@@ -302,10 +302,10 @@ export function copy(id: string, text: string) {
 }
 export const isCopied = (id: string) => copied() === id;
 
-/** The exact copies beside the snippets: the raw SVG and the CLI's add command. */
+/** The exact copies beside the snippets: the raw SVG and the commands that install the set. */
 export const exactCopies = (icon: IconData) => [
   { id: "copy-svg", label: "SVG markup", text: svgMarkup(icon) },
-  { id: "copy-add", label: "add command", text: `supernsh-icons add ${icon.set}:${icon.name} --out src/icons.ts` },
+  { id: "copy-add", label: "install commands", text: `nsh add supernsh-icons\nnsh add supernsh-icons-${icon.set}` },
 ];
 
 /** The app runs in a browser: the only target where a file can be saved. */

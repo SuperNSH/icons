@@ -5,7 +5,7 @@
 import { Image, Scroll, Text, View, computed, windowSize, type JSX } from "nsh";
 import { Input } from "nsh/base";
 import { Icon, type IconData } from "supernsh-icons";
-import { lucideDownload, lucideX } from "./chrome";
+import { lucideDownload, lucideX } from "supernsh-icons-lucide";
 import {
   GRADIENT_LABELS,
   PADDING_MAX,

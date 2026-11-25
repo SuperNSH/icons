@@ -1,7 +1,7 @@
 // A snippet an app pastes: its name, the button that copies it, and the code.
 import { Text, View } from "nsh";
 import { Icon } from "supernsh-icons";
-import { lucideCheck, lucideCopy } from "../chrome";
+import { lucideCheck, lucideCopy } from "supernsh-icons-lucide";
 import { Button } from "./button";
 
 export function CodeBlock(props: { testID: string; label: string; code: string; copied: boolean; onCopy: () => void }) {
