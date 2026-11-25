@@ -42,13 +42,14 @@ test("a chosen tile is marked, and the detail pane copies what an app pastes", a
   await app.press("id:copy-ts");
   const ts = await clipboardSettles(app, (text) => text.includes("lucideHouse"));
   expect(ts).toContain('import { Icon } from "supernsh-icons"');
+  expect(ts).toContain('from "supernsh-icons-lucide"');
   expect(ts).toContain("<Icon icon={lucideHouse}");
   await app.press("id:copy-rust");
-  expect(await clipboardSettles(app, (text) => text.includes("LUCIDE_HOUSE"))).toContain("LUCIDE_HOUSE");
+  expect(await clipboardSettles(app, (text) => text.includes("use supernsh_icons::icon"))).toContain("icon(lucide::HOUSE)");
   await app.press("id:copy-svg");
   expect(await clipboardSettles(app, (text) => text.startsWith("<svg"))).toContain('viewBox="0 0 24 24"');
   await app.press("id:copy-add");
-  expect(await clipboardSettles(app, (text) => text.startsWith("supernsh-icons add lucide:house"))).toContain("--out src/icons.ts");
+  expect(await clipboardSettles(app, (text) => text.startsWith("nsh add"))).toBe("nsh add supernsh-icons\nnsh add supernsh-icons-lucide");
 });
 
 test("a set with weights gets its variant chips, and global search lists the sets with matches", async () => {

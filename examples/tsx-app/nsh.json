@@ -1,0 +1,13 @@
+{
+  "name": "supernsh-icons tsx",
+  "id": "dev.supernsh.icons.tsx",
+  "version": "0.1.0",
+  "build": 1,
+  "capabilities": {},
+  "dependencies": {
+    "supernsh-icons": { "path": "../.." },
+    "supernsh-icons-circle-flags": { "path": "../../sets/circle-flags" },
+    "supernsh-icons-logos": { "path": "../../sets/logos" },
+    "supernsh-icons-lucide": { "path": "../../sets/lucide" }
+  }
+}

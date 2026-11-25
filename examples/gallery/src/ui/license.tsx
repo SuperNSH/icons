@@ -1,7 +1,7 @@
 // A set's license, and the mark that it asks for more than most.
 import { Text, View } from "nsh";
 import { Icon } from "supernsh-icons";
-import { lucideTriangleAlert } from "../chrome";
+import { lucideTriangleAlert } from "supernsh-icons-lucide";
 import type { DemoSet } from "../demo-index";
 
 export function License(props: { meta: DemoSet }) {

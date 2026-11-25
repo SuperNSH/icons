@@ -17,7 +17,7 @@ import {
   lucideSun,
   lucideType,
   lucideX,
-} from "./src/chrome";
+} from "supernsh-icons-lucide";
 import { SETS, VERSION, type DemoSet } from "./src/demo-index";
 import { phGearFill, phHeartFill, phHouseFill, phStarFill } from "./src/icon-font";
 import { Studio } from "./src/studio-view";
@@ -153,7 +153,7 @@ function Thumbnail(props: { meta: DemoSet }) {
   return (
     <View class="size-9 shrink-0 flex-row flex-wrap items-center justify-center gap-1 overflow-hidden rounded-md bg-background p-0.5">
       <Each of={props.meta.samples.slice(0, 4)}>
-        {(sample) => <Icon icon={sample()} size={12} color={props.meta.multicolor ? undefined : token("foreground")} />}
+        {(sample) => <Icon icon={sample()} size={12} color={token("foreground")} />}
       </Each>
     </View>
   );
@@ -207,7 +207,7 @@ function SidebarSheet() {
   );
 }
 
-/** The raw SVG and the CLI's add command, each one press from the clipboard. */
+/** The raw SVG and the install commands, each one press from the clipboard. */
 function CopyRow(props: { icon: IconData }) {
   return (
     <View class="flex-row flex-wrap gap-2">
@@ -423,7 +423,7 @@ function Home() {
             >
               <View class="flex-row gap-3">
                 <Each of={meta().samples.slice(0, 4)}>
-                  {(sample) => <Icon icon={sample()} size={20} color={meta().multicolor ? undefined : token("foreground")} />}
+                  {(sample) => <Icon icon={sample()} size={20} color={token("foreground")} />}
                 </Each>
               </View>
               <View class="gap-0.5">
@@ -543,7 +543,7 @@ function Grid() {
               classList={{ "bg-primary/15": isActive(row().meta.prefix, row().name) }}
             >
               {row().icon ? (
-                <Icon icon={row().icon!} size={iconSize()} color={row().icon!.multicolor ? undefined : ink()} />
+                <Icon icon={row().icon!} size={iconSize()} color={ink()} />
               ) : (
                 <View style={{ height: iconSize(), width: iconSize() }} />
               )}
@@ -605,7 +605,7 @@ function Variant(props: { meta: DemoSet; icon: IconData; current: boolean; label
       onPress={() => openIcon(props.meta, props.icon.name)}
       class={`min-w-16 items-center gap-1 rounded-lg border p-2 ${props.current ? "border-primary/40 bg-primary/10" : "border-border bg-card hover:bg-muted active:bg-muted"} ${focus}`}
     >
-      <Icon icon={props.icon} size={20} color={props.icon.multicolor ? undefined : token("foreground")} />
+      <Icon icon={props.icon} size={20} color={token("foreground")} />
       <Text class={`text-center text-xs ${props.current ? "text-primary" : "text-muted-foreground"}`}>{props.label}</Text>
     </Pressable>
   );
@@ -631,7 +631,7 @@ function Detail(props: { onClose?: () => void }) {
             return (
               <View class="gap-4 p-3">
                 <View class={`h-40 items-center justify-center rounded-xl border ${previewFrame()}`}>
-                  <Icon icon={icon()} size={72} color={icon().multicolor ? undefined : ink()} />
+                  <Icon icon={icon()} size={72} color={ink()} />
                 </View>
                 <View class="gap-1">
                   <View class="flex-row items-center gap-1">
