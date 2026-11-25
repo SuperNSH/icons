@@ -83,13 +83,14 @@ def manifest(text):
 for path in ["Cargo.toml", *glob.glob("crates/*/Cargo.toml")]:
     edit(path, manifest)
 version_field = lambda t: re.sub(r'(?m)^(  "version": )"[^"]*"', rf'\g<1>"{new}"', t, count=1)
-for path in ["nsh.json", *glob.glob("packages/*/package.json")]:
+for path in ["nsh.json", "cli/package.json", *glob.glob("packages/*/package.json")]:
     edit(path, version_field)
 def snippets(text):
     text = re.sub(rf'(?m)^((?:{names}) = )"[0-9][^"]*"', rf'\g<1>"{minor}"', text)
     text = re.sub(rf'(?m)^((?:{names}) = \{{ version = )"[0-9][^"]*"', rf'\g<1>"{minor}"', text)
     return re.sub(rf'("(?:{names})": )"\^[0-9][^"]*"', rf'\g<1>"^{new}"', text)
-for path in ["README.md", *glob.glob("docs/getting-started.md")]:
+# A set's nsh.json asks for the base crate as the README does.
+for path in ["README.md", *glob.glob("docs/getting-started.md"), *glob.glob("sets/*/nsh.json")]:
     edit(path, snippets)
 PY
   local crate v
