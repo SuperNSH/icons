@@ -8,6 +8,11 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+    inputs:
+      demo:
+        description: "Also package the gallery for every platform, without publishing it"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -48,7 +53,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
           toolchain: stable
-          components: clippy
+          components: clippy, rustfmt
       - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
         with:
           version: v2.1.1
@@ -60,11 +65,15 @@ jobs:
       - name: Install Linux packages
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
-      - run: cargo clippy -p nsh-icons-codegen --all-targets -- -D warnings
-      - run: cargo clippy -p supernsh-icons --all-targets --features lucide,logos -- -D warnings
-      # The codegen tests read every bundled set; the crate's tests run with two sets on.
-      - run: cargo test -p nsh-icons-codegen --no-fail-fast
-      - run: cargo test -p supernsh-icons --features lucide,logos --no-fail-fast
+      # The tests draw with two of the sets; the sets job compiles the rest.
+      - run: cargo clippy -p supernsh-icons -p supernsh-icons-lucide -p supernsh-icons-logos --all-targets -- -D warnings
+      - run: cargo test -p supernsh-icons --no-fail-fast
+      - name: The Rust example, checked and tested
+        working-directory: examples/rust-app
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
 
   # What publish.yml uploads, packaged, built from the package, and installed with `nsh add`.
   package:
@@ -78,24 +87,19 @@ jobs:
       - name: Install Linux packages
         run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
       - run: scripts/publish-crates.sh verify
-      # Only for a crate with #[native_module]; the NSH releases up to 0.6.1 have no `nsh add`.
-      - name: Install NSH nightly
+      - name: Install NSH
         env:
-          NSH_VERSION: nightly
+          NSH_VERSION: v0.7.0
         run: |
-          curl -fsSL https://raw.githubusercontent.com/SuperNSH/nsh-builds/master/install.sh | sh
+          curl -fsSL https://nsh.dev/install.sh | sh
           echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: scripts/check-nsh-add.sh
 
   sets:
-    name: every set compiles (${{ matrix.shard }}/4)
+    name: every set compiles
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
@@ -105,13 +109,13 @@ jobs:
         with:
           version: v2.1.1
           cache-dir: ${{ runner.temp }}/kache
-          manifest-key: sets-${{ matrix.shard }}
-          cache-key-prefix: kache-sets-${{ matrix.shard }}
+          manifest-key: sets
+          cache-key-prefix: kache-sets
           save-cache: ${{ github.ref == 'refs/heads/master' }}
           pr-comment: false
       - name: Install Linux packages
         run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
-      - run: tools/ci/check-sets.sh ${{ matrix.shard }} 4
+      - run: cargo check --workspace --locked
 
   cross-check:
     name: check (${{ matrix.target }})
@@ -147,31 +151,36 @@ jobs:
           echo "CC_aarch64_linux_android=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
           echo "AR_aarch64_linux_android=$bin/llvm-ar" >> "$GITHUB_ENV"
           echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
-      - run: cargo clippy -p supernsh-icons --target ${{ matrix.target }} --features lucide,logos -- -D warnings
+      - run: cargo clippy -p supernsh-icons -p supernsh-icons-lucide -p supernsh-icons-logos --target ${{ matrix.target }} -- -D warnings
 
   typescript:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.4
+      - name: Install Linux packages
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
       - name: Install NSH
         env:
-          NSH_VERSION: v0.6.0
+          NSH_VERSION: v0.7.0
         run: |
           curl -fsSL https://nsh.dev/install.sh | sh
           echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: The CLI, type checked and tested
-        working-directory: packages/nsh-icons
+        working-directory: cli
         run: |
           bun install --frozen-lockfile
-          bunx tsc -p cli
-          bun test cli
-      - name: The TSX package, check and build without warnings, then test
-        working-directory: packages/nsh-icons
+          bunx tsc
+          bun test
+      - name: The TSX example, check and build without warnings, then test
+        working-directory: examples/tsx-app
         run: |
           nsh check
           nsh build 2>&1 | tee build.log
@@ -181,16 +190,37 @@ jobs:
         working-directory: examples/gallery
         # The same run writes src/data/ (gitignored) that the next step tests with.
         run: |
-          node ../../packages/nsh-icons/cli/nsh-icons.ts gallery
-          node ../../packages/nsh-icons/cli/nsh-icons.ts add --out src/chrome.ts
+          node ../../cli/nsh-icons.ts gallery
           git diff --exit-code -- .
       - name: The gallery, checked and tested
         working-directory: examples/gallery
         run: |
-          mkdir -p node_modules/supernsh-icons
-          cp -r ../../packages/nsh-icons/src ../../packages/nsh-icons/package.json node_modules/supernsh-icons/
           nsh check
           nsh test
+
+  # Headless tests draw nothing. This draws the TSX example with AppKit and keeps the picture.
+  drawn:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - name: Install NSH
+        env:
+          NSH_VERSION: v0.7.0
+        run: |
+          curl -fsSL https://nsh.dev/install.sh | sh
+          echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - working-directory: examples/tsx-app
+        run: nsh test --target macos tests/drawn.test.tsx
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: drawn-macos
+          path: examples/tsx-app/drawn.png
+          if-no-files-found: error
 
   data:
     name: bundled data matches its pinned version
@@ -206,7 +236,7 @@ jobs:
 
   demo:
     name: demo (${{ matrix.name }})
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || inputs.demo
     needs: [format, rust, typescript]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -215,7 +245,7 @@ jobs:
       matrix:
         include:
           # Desktop builds come out for the runner's own processor, so each architecture gets its own runner.
-          # NSH's v0.6.0 release ships a prebuilt CLI for every one of them, so all install it the same way.
+          # NSH's v0.7.0 release ships a prebuilt CLI for every one of them, so all install it the same way.
           - { os: macos-latest, target: macos, name: macos-arm64 }
           - { os: macos-15-intel, target: macos, name: macos-x86_64 }
           - { os: ubuntu-latest, target: linux, name: linux-x86_64 }
@@ -250,7 +280,7 @@ jobs:
       - name: Install NSH
         if: runner.os != 'Windows'
         env:
-          NSH_VERSION: v0.6.0
+          NSH_VERSION: v0.7.0
         run: |
           curl -fsSL https://nsh.dev/install.sh | sh
           echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
@@ -259,16 +289,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          NSH_VERSION: v0.6.0
+          NSH_VERSION: v0.7.0
         run: |
           irm https://nsh.dev/install.ps1 | iex
           "$env:LOCALAPPDATA\nsh\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-      - name: Put the package where the gallery imports it
-        # A copy, not a link: Windows symlinks need a privilege the runner lacks.
-        shell: bash
-        run: |
-          mkdir -p examples/gallery/node_modules/supernsh-icons
-          cp -r packages/nsh-icons/src packages/nsh-icons/package.json examples/gallery/node_modules/supernsh-icons/
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -276,7 +300,7 @@ jobs:
         # src/data/ is gitignored (tens of megabytes), so every build writes it
         # fresh. --data-only needs no installed libraries: the font is committed.
         working-directory: examples/gallery
-        run: node ../../packages/nsh-icons/cli/nsh-icons.ts gallery --data-only
+        run: node ../../cli/nsh-icons.ts gallery --data-only
       - name: Package
         shell: bash
         working-directory: examples/gallery
@@ -306,7 +330,7 @@ jobs:
 
   publish:
     name: publish the latest build
-    needs: [format, rust, sets, cross-check, typescript, data, demo]
+    needs: [format, rust, package, sets, cross-check, typescript, drawn, data, demo]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -333,7 +357,7 @@ jobs:
 
   pages:
     name: deploy the web gallery to Pages
-    needs: [format, rust, sets, cross-check, typescript, data, demo]
+    needs: [format, rust, package, sets, cross-check, typescript, drawn, data, demo]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 15
