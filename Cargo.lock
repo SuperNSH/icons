@@ -2141,7 +2141,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "supernsh-icons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "nsh-engine",
@@ -2152,7 +2152,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-akar-icons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2160,7 +2160,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-ant-design"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2168,7 +2168,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-bi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2176,7 +2176,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-bx"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2184,7 +2184,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-carbon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2192,7 +2192,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-circle-flags"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2200,7 +2200,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-codicon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2208,7 +2208,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-devicon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2216,7 +2216,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-fa7-brands"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2224,7 +2224,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-fa7-regular"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2232,7 +2232,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-fa7-solid"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2240,7 +2240,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-fe"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2248,7 +2248,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-flag"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2256,7 +2256,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-fluent"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2264,7 +2264,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-heroicons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2272,7 +2272,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-hugeicons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2280,7 +2280,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-iconoir"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2288,7 +2288,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-ion"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2296,7 +2296,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-line-md"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2304,7 +2304,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-logos"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2312,7 +2312,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-lucide"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2320,7 +2320,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-majesticons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2328,7 +2328,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-material-symbols"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2336,7 +2336,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-mdi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2344,7 +2344,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-mingcute"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2352,7 +2352,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-mynaui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2360,7 +2360,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-octicon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2368,7 +2368,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-ph"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2376,7 +2376,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-radix-icons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2384,7 +2384,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-ri"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2392,7 +2392,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-simple-icons"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2400,7 +2400,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-solar"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2408,7 +2408,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-streamline"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2416,7 +2416,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-svg-spinners"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",
@@ -2424,7 +2424,7 @@ dependencies = [
 
 [[package]]
 name = "supernsh-icons-tabler"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nsh-core",
  "supernsh-icons",

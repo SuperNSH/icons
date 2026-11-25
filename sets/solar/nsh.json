@@ -4,6 +4,6 @@
     "supernsh-icons-solar": "tsx/index.ts"
   },
   "dependencies": {
-    "supernsh-icons": "^0.1.0"
+    "supernsh-icons": "^0.2.0"
   }
 }

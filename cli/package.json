@@ -1,6 +1,6 @@
 {
   "name": "supernsh-icons-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Writes only the icons an NSH app uses, from any Iconify set, as SVG data or an icon font. Run it from a checkout.",
   "license": "MIT",
   "type": "module",

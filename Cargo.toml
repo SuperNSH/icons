@@ -2,7 +2,7 @@
 name = "supernsh-icons"
 description = "Icons for Native Shell (NSH) apps, in Rust and TSX: one Icon component, icon-font glyphs, and a crate per Iconify set"
 # Not inherited: `nsh add --path` reads the version here.
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/SuperNSH/icons"
@@ -17,13 +17,13 @@ exclude = ["examples"]
 resolver = "3"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 repository = "https://github.com/SuperNSH/icons"
 authors = ["hmziqrs"]
 
 [workspace.dependencies]
-supernsh-icons = { path = ".", version = "0.1.0" }
+supernsh-icons = { path = ".", version = "0.2.0" }
 nsh-core = "0.7.0"
 
 [lib]
